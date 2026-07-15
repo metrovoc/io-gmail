@@ -22,7 +22,7 @@ use crate::{
 /// Response wrapping the forwarding addresses of a Gmail account.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailListForwardingAddressesResponse {
+pub struct GmailForwardingAddressesListResponse {
     /// Forwarding addresses of the Gmail account.
     #[serde(default)]
     pub forwarding_addresses: Vec<GmailForwardingAddress>,
@@ -30,11 +30,11 @@ pub struct GmailListForwardingAddressesResponse {
 
 /// I/O-free coroutine listing the forwarding addresses of a Gmail
 /// account (`users.settings.forwardingAddresses.list`).
-pub struct GmailListForwardingAddresses {
-    send: GmailSend<GmailListForwardingAddressesResponse>,
+pub struct GmailForwardingAddressesList {
+    send: GmailSend<GmailForwardingAddressesListResponse>,
 }
 
-impl GmailListForwardingAddresses {
+impl GmailForwardingAddressesList {
     /// Builds the `users.settings.forwardingAddresses.list` request for
     /// the given user.
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
@@ -49,13 +49,13 @@ impl GmailListForwardingAddresses {
     }
 }
 
-impl GmailCoroutine for GmailListForwardingAddresses {
+impl GmailCoroutine for GmailForwardingAddressesList {
     type Yield = GmailYield;
-    type Return = Result<GmailSendOutput<GmailListForwardingAddressesResponse>, GmailSendError>;
+    type Return = Result<GmailSendOutput<GmailForwardingAddressesListResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail forwarding addresses listed");
+        debug!("forwarding addresses listed");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

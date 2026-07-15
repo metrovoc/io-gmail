@@ -15,11 +15,11 @@ use crate::{
 };
 
 /// I/O-free coroutine deleting a Gmail label by id (`users.labels.delete`).
-pub struct GmailDeleteLabel {
+pub struct GmailLabelDelete {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailDeleteLabel {
+impl GmailLabelDelete {
     /// Builds the `users.labels.delete` request for the given label id.
     pub fn new(auth: &HttpAuthBearer, user_id: &str, id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail label deletion");
@@ -32,13 +32,13 @@ impl GmailDeleteLabel {
     }
 }
 
-impl GmailCoroutine for GmailDeleteLabel {
+impl GmailCoroutine for GmailLabelDelete {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail label deleted");
+        debug!("label deleted");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

@@ -17,11 +17,11 @@ use crate::{
 };
 
 /// Gmail REST message retrieval, wrapping a `GmailMessage` response.
-pub struct GmailGetMessage {
+pub struct GmailMessageGet {
     send: GmailSend<GmailMessage>,
 }
 
-impl GmailGetMessage {
+impl GmailMessageGet {
     /// Builds the `users.messages.get` request for the given message id.
     ///
     /// `metadata_headers` filters the returned headers, and only
@@ -56,13 +56,13 @@ impl GmailGetMessage {
     }
 }
 
-impl GmailCoroutine for GmailGetMessage {
+impl GmailCoroutine for GmailMessageGet {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailMessage>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail message retrieved");
+        debug!("message retrieved");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

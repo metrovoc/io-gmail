@@ -16,11 +16,11 @@ use crate::{
 };
 
 /// Gmail REST thread untrashing, wrapping the updated `GmailThread`.
-pub struct GmailUntrashThread {
+pub struct GmailThreadUntrash {
     send: GmailSend<GmailThread>,
 }
 
-impl GmailUntrashThread {
+impl GmailThreadUntrash {
     /// Builds the `users.threads.untrash` request for the given thread id.
     pub fn new(auth: &HttpAuthBearer, user_id: &str, id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail thread untrashing");
@@ -34,13 +34,13 @@ impl GmailUntrashThread {
     }
 }
 
-impl GmailCoroutine for GmailUntrashThread {
+impl GmailCoroutine for GmailThreadUntrash {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailThread>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail thread untrashed");
+        debug!("thread untrashed");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

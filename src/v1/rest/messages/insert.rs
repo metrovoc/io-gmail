@@ -17,11 +17,11 @@ use crate::{
 };
 
 /// Gmail REST message insert, wrapping the inserted `GmailMessage`.
-pub struct GmailInsertMessage {
+pub struct GmailMessageInsert {
     send: GmailSend<GmailMessage>,
 }
 
-impl GmailInsertMessage {
+impl GmailMessageInsert {
     /// Builds the `users.messages.insert` request for the given message.
     ///
     /// `deleted` marks the message as permanently deleted (not
@@ -59,13 +59,13 @@ impl GmailInsertMessage {
     }
 }
 
-impl GmailCoroutine for GmailInsertMessage {
+impl GmailCoroutine for GmailMessageInsert {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailMessage>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail message inserted");
+        debug!("message inserted");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

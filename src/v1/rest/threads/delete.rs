@@ -15,11 +15,11 @@ use crate::{
 };
 
 /// Gmail REST thread permanent deletion, yielding no response body.
-pub struct GmailDeleteThread {
+pub struct GmailThreadDelete {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailDeleteThread {
+impl GmailThreadDelete {
     /// Builds the `users.threads.delete` request for the given thread id.
     pub fn new(auth: &HttpAuthBearer, user_id: &str, id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail thread deletion");
@@ -32,13 +32,13 @@ impl GmailDeleteThread {
     }
 }
 
-impl GmailCoroutine for GmailDeleteThread {
+impl GmailCoroutine for GmailThreadDelete {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail thread deleted");
+        debug!("thread deleted");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

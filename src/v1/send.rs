@@ -5,7 +5,7 @@
 //!
 //! Gmail API reference: <https://developers.google.com/gmail/api/reference/rest>.
 
-use core::{fmt, marker::PhantomData};
+use core::marker::PhantomData;
 
 use alloc::{
     string::{String, ToString},
@@ -21,7 +21,7 @@ use io_http::{
     },
     rfc9112::send::{Http11Send, Http11SendError},
 };
-use log::trace;
+use log::{debug, trace};
 use serde::{Deserialize, Deserializer, Serialize, de::DeserializeOwned};
 use thiserror::Error;
 use url::Url;
@@ -49,18 +49,30 @@ impl<'de> Deserialize<'de> for GmailNoResponse {
 /// Errors that can occur during a Gmail exchange.
 #[derive(Debug, Error)]
 pub enum GmailSendError {
+    /// The underlying HTTP exchange failed.
     #[error("Gmail HTTP request failed: {0}")]
     Send(#[from] Http11SendError),
+    /// The request body could not be serialized to JSON.
     #[error("Gmail request serialization failed: {0}")]
     SerializeRequest(#[source] serde_json::Error),
+    /// The 2xx response body could not be parsed as JSON.
     #[error("Gmail response parsing failed: {0}")]
     ParseResponse(#[source] serde_json::Error),
+    /// The request URL could not be built.
     #[error("Gmail URL parsing failed: {0}")]
     ParseUrl(#[from] url::ParseError),
+    /// The request was rejected before being sent.
     #[error("Invalid Gmail request: {0}")]
     InvalidRequest(String),
+    /// Gmail returned a non-2xx status with its error envelope.
     #[error("Gmail API returned HTTP {status}: {message}")]
-    Api { status: u16, message: String },
+    Api {
+        /// The effective status code, from the envelope when present.
+        status: u16,
+        /// The error message, from the envelope or the raw body.
+        message: String,
+    },
+    /// The server answered with a redirect, which is never followed.
     #[error("Gmail server returned an unexpected redirect")]
     UnexpectedRedirect,
 }
@@ -177,7 +189,9 @@ impl<T: DeserializeOwned> GmailSend<T> {
 
         request.method = method.into();
 
-        trace!("send Gmail {method} request to {url}");
+        debug!("prepare request to send");
+        trace!("method: {method}");
+        trace!("url: {url}");
 
         Self {
             state: State::Send(Http11Send::new(request)),
@@ -191,7 +205,6 @@ impl<T: DeserializeOwned> GmailCoroutine for GmailSend<T> {
     type Return = Result<GmailSendOutput<T>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
-        trace!("send: {}", self.state);
         match &mut self.state {
             State::Send(send) => match send.resume(arg) {
                 HttpCoroutineState::Yielded(HttpSendYield::WantsRead) => {
@@ -239,14 +252,6 @@ impl<T: DeserializeOwned> GmailCoroutine for GmailSend<T> {
 
 enum State {
     Send(Http11Send),
-}
-
-impl fmt::Display for State {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Send(_) => f.write_str("send"),
-        }
-    }
 }
 
 #[derive(Debug, Deserialize)]

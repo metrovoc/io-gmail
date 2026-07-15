@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine getting the Gmail display language settings
 /// (`users.settings.getLanguage`).
-pub struct GmailGetLanguage {
+pub struct GmailLanguageGet {
     send: GmailSend<GmailLanguageSettings>,
 }
 
-impl GmailGetLanguage {
+impl GmailLanguageGet {
     /// Builds the `users.settings.getLanguage` request for the given user.
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail language settings retrieval");
@@ -37,13 +37,13 @@ impl GmailGetLanguage {
     }
 }
 
-impl GmailCoroutine for GmailGetLanguage {
+impl GmailCoroutine for GmailLanguageGet {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailLanguageSettings>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail language settings retrieved");
+        debug!("language settings retrieved");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

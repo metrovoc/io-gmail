@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine updating the Gmail vacation responder settings
 /// (`users.settings.updateVacation`).
-pub struct GmailUpdateVacation {
+pub struct GmailVacationUpdate {
     send: GmailSend<GmailVacationSettings>,
 }
 
-impl GmailUpdateVacation {
+impl GmailVacationUpdate {
     /// Builds the `users.settings.updateVacation` request wrapping the given
     /// settings.
     pub fn new(
@@ -42,13 +42,13 @@ impl GmailUpdateVacation {
     }
 }
 
-impl GmailCoroutine for GmailUpdateVacation {
+impl GmailCoroutine for GmailVacationUpdate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailVacationSettings>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail vacation settings updated");
+        debug!("vacation settings updated");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

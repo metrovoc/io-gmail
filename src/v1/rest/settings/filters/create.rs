@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine creating a filter on a Gmail account
 /// (`users.settings.filters.create`).
-pub struct GmailCreateFilter {
+pub struct GmailFilterCreate {
     send: GmailSend<GmailFilter>,
 }
 
-impl GmailCreateFilter {
+impl GmailFilterCreate {
     /// Builds the `users.settings.filters.create` request for the given
     /// filter.
     pub fn new(
@@ -41,13 +41,13 @@ impl GmailCreateFilter {
     }
 }
 
-impl GmailCoroutine for GmailCreateFilter {
+impl GmailCoroutine for GmailFilterCreate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailFilter>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail filter created");
+        debug!("filter created");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

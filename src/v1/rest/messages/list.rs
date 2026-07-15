@@ -13,7 +13,7 @@ use crate::{
     coroutine::*,
     gmail_try,
     v1::{
-        query::to_query_pairs,
+        query::{is_false, to_query_pairs},
         rest::messages::GmailMessageId,
         send::{GMAIL_API_BASE, GmailSend, GmailSendError, GmailSendOutput},
     },
@@ -22,7 +22,7 @@ use crate::{
 /// Query parameters for listing messages (`users.messages.list`).
 #[derive(Debug, Clone, Default, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailListMessagesParams<'a> {
+pub struct GmailMessagesListParams<'a> {
     /// The search query filtering the returned messages, using the
     /// Gmail search box syntax.
     pub q: Option<&'a str>,
@@ -33,14 +33,14 @@ pub struct GmailListMessagesParams<'a> {
     /// The page token from a previous list response.
     pub page_token: Option<&'a str>,
     /// Whether to include messages from SPAM and TRASH in the results.
-    #[serde(skip_serializing_if = "crate::v1::query::is_false")]
+    #[serde(skip_serializing_if = "is_false")]
     pub include_spam_trash: bool,
 }
 
 /// Gmail REST message listing response (one page of message ids).
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailListMessagesResponse {
+pub struct GmailMessagesListResponse {
     /// The messages of the current page, each carrying only an id
     /// and a thread id.
     #[serde(default)]
@@ -55,17 +55,17 @@ pub struct GmailListMessagesResponse {
 }
 
 /// Gmail REST message listing, wrapping a page of message ids.
-pub struct GmailListMessages {
-    send: GmailSend<GmailListMessagesResponse>,
+pub struct GmailMessagesList {
+    send: GmailSend<GmailMessagesListResponse>,
 }
 
-impl GmailListMessages {
+impl GmailMessagesList {
     /// Builds the `users.messages.list` request from the given
     /// query parameters.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
-        params: &GmailListMessagesParams,
+        params: &GmailMessagesListParams,
     ) -> Result<Self, GmailSendError> {
         debug!("prepare gmail messages listing");
         trace!("params: {params:?}");
@@ -79,13 +79,13 @@ impl GmailListMessages {
     }
 }
 
-impl GmailCoroutine for GmailListMessages {
+impl GmailCoroutine for GmailMessagesList {
     type Yield = GmailYield;
-    type Return = Result<GmailSendOutput<GmailListMessagesResponse>, GmailSendError>;
+    type Return = Result<GmailSendOutput<GmailMessagesListResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail messages listed");
+        debug!("messages listed");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

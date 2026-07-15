@@ -18,11 +18,11 @@ use crate::{
 };
 
 /// Gmail REST thread retrieval, wrapping a `GmailThread` response.
-pub struct GmailGetThread {
+pub struct GmailThreadGet {
     send: GmailSend<GmailThread>,
 }
 
-impl GmailGetThread {
+impl GmailThreadGet {
     /// Builds the `users.threads.get` request for the given thread id
     /// and message format.
     ///
@@ -57,13 +57,13 @@ impl GmailGetThread {
     }
 }
 
-impl GmailCoroutine for GmailGetThread {
+impl GmailCoroutine for GmailThreadGet {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailThread>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail thread retrieved");
+        debug!("thread retrieved");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

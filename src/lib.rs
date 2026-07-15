@@ -54,12 +54,14 @@
 //!
 //! ## Naming
 //!
-//! Public items follow `<Domain><Verb><Target><Ext>`: the domain is
-//! `Gmail`, the verb-target pair mirrors the REST method
-//! (`GmailGetLabel` for `users.labels.get`, `GmailBatchDeleteMessages`
+//! Public items follow `<Domain><Target><Verb><Ext>`: the domain is
+//! `Gmail`, the target-verb pair mirrors the REST method
+//! (`GmailLabelGet` for `users.labels.get`, `GmailMessagesBatchDelete`
 //! for `users.messages.batchDelete`) and the extension distinguishes
 //! companions (`Params`, `Response`, `Error`, `Yield`). Pure data
-//! resources omit the verb (`GmailLabel`, `GmailMessage`).
+//! resources omit the verb (`GmailLabel`, `GmailMessage`); the target
+//! is omitted when the verb applies to the whole exchange
+//! ([`v1::send::GmailSend`], `GmailWatch`, `GmailStop`).
 //!
 //! ## Module layout
 //!
@@ -78,7 +80,7 @@
 //!
 //! ## Watching a mailbox
 //!
-//! [`v1::poll_history::GmailPollHistory`] is the one composite,
+//! [`v1::history_poll::GmailHistoryPoll`] is the one composite,
 //! multi-step coroutine: an infinite watch that baselines the history
 //! cursor via `users.getProfile`, polls `users.history.list` on a timer
 //! and yields one Gmail-native diff per tick, re-baselining on an
@@ -109,7 +111,7 @@
 //!     sync::Arc,
 //! };
 //!
-//! use io_gmail::{coroutine::*, v1::rest::users::get_profile::GmailGetProfile};
+//! use io_gmail::{coroutine::*, v1::rest::users::get_profile::GmailProfileGet};
 //! use io_http::rfc6750::bearer::HttpAuthBearer;
 //! use rustls::{ClientConfig, ClientConnection, StreamOwned};
 //! use rustls_platform_verifier::ConfigVerifierExt;
@@ -121,7 +123,7 @@
 //! let mut stream = StreamOwned::new(conn, tcp);
 //!
 //! let auth = HttpAuthBearer::new("token");
-//! let mut coroutine = GmailGetProfile::new(&auth, "me").unwrap();
+//! let mut coroutine = GmailProfileGet::new(&auth, "me").unwrap();
 //!
 //! let mut arg: Option<&[u8]> = None;
 //! let mut buf = [0u8; 8192];

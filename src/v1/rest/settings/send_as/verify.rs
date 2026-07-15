@@ -16,11 +16,11 @@ use crate::{
 
 /// I/O-free coroutine verifying a Gmail send-as alias
 /// (`users.settings.sendAs.verify`).
-pub struct GmailVerifySendAs {
+pub struct GmailSendAsVerify {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailVerifySendAs {
+impl GmailSendAsVerify {
     /// Builds the `users.settings.sendAs.verify` request for the given alias.
     pub fn new(
         auth: &HttpAuthBearer,
@@ -39,13 +39,13 @@ impl GmailVerifySendAs {
     }
 }
 
-impl GmailCoroutine for GmailVerifySendAs {
+impl GmailCoroutine for GmailSendAsVerify {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail send-as alias verification requested");
+        debug!("send-as alias verification requested");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

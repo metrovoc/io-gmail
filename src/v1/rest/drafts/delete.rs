@@ -15,11 +15,11 @@ use crate::{
 };
 
 /// Gmail REST draft deletion, yielding no response body.
-pub struct GmailDeleteDraft {
+pub struct GmailDraftDelete {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailDeleteDraft {
+impl GmailDraftDelete {
     /// Builds the `users.drafts.delete` request for the given draft id.
     pub fn new(auth: &HttpAuthBearer, user_id: &str, id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail draft deletion");
@@ -32,13 +32,13 @@ impl GmailDeleteDraft {
     }
 }
 
-impl GmailCoroutine for GmailDeleteDraft {
+impl GmailCoroutine for GmailDraftDelete {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail draft deleted");
+        debug!("draft deleted");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

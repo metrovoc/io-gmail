@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine getting the Gmail POP access settings
 /// (`users.settings.getPop`).
-pub struct GmailGetPop {
+pub struct GmailPopGet {
     send: GmailSend<GmailPopSettings>,
 }
 
-impl GmailGetPop {
+impl GmailPopGet {
     /// Builds the `users.settings.getPop` request for the given user.
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail pop settings retrieval");
@@ -36,13 +36,13 @@ impl GmailGetPop {
     }
 }
 
-impl GmailCoroutine for GmailGetPop {
+impl GmailCoroutine for GmailPopGet {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailPopSettings>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail pop settings retrieved");
+        debug!("pop settings retrieved");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

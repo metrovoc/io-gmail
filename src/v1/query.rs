@@ -35,25 +35,25 @@ pub fn is_false(value: &bool) -> bool {
 
 /// Error raised when a value cannot be flattened into query pairs.
 #[derive(Debug)]
-pub struct QueryError(String);
+pub struct GmailQueryError(String);
 
-impl fmt::Display for QueryError {
+impl fmt::Display for GmailQueryError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.0)
     }
 }
 
-impl core::error::Error for QueryError {}
+impl core::error::Error for GmailQueryError {}
 
-impl SerError for QueryError {
+impl SerError for GmailQueryError {
     fn custom<T: fmt::Display>(msg: T) -> Self {
         Self(msg.to_string())
     }
 }
 
-fn unsupported() -> QueryError {
-    QueryError(String::from(
-        "query parameters must be a flat struct of scalars and sequences",
+fn unsupported() -> GmailQueryError {
+    GmailQueryError(String::from(
+        "Query parameters must be a flat struct of scalars and sequences",
     ))
 }
 
@@ -62,7 +62,7 @@ struct QuerySerializer;
 
 impl Serializer for QuerySerializer {
     type Ok = Vec<(String, String)>;
-    type Error = QueryError;
+    type Error = GmailQueryError;
     type SerializeSeq = Impossible<Self::Ok, Self::Error>;
     type SerializeTuple = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
@@ -212,7 +212,7 @@ struct StructQuery {
 
 impl SerializeStruct for StructQuery {
     type Ok = Vec<(String, String)>;
-    type Error = QueryError;
+    type Error = GmailQueryError;
 
     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
     where
@@ -237,7 +237,7 @@ struct FieldQuery<'a> {
 }
 
 impl FieldQuery<'_> {
-    fn push(self, value: String) -> Result<(), QueryError> {
+    fn push(self, value: String) -> Result<(), GmailQueryError> {
         self.pairs.push((self.key.to_string(), value));
         Ok(())
     }
@@ -245,14 +245,14 @@ impl FieldQuery<'_> {
 
 impl<'a> Serializer for FieldQuery<'a> {
     type Ok = ();
-    type Error = QueryError;
+    type Error = GmailQueryError;
     type SerializeSeq = SeqQuery<'a>;
-    type SerializeTuple = Impossible<(), QueryError>;
-    type SerializeTupleStruct = Impossible<(), QueryError>;
-    type SerializeTupleVariant = Impossible<(), QueryError>;
-    type SerializeMap = Impossible<(), QueryError>;
-    type SerializeStruct = Impossible<(), QueryError>;
-    type SerializeStructVariant = Impossible<(), QueryError>;
+    type SerializeTuple = Impossible<(), GmailQueryError>;
+    type SerializeTupleStruct = Impossible<(), GmailQueryError>;
+    type SerializeTupleVariant = Impossible<(), GmailQueryError>;
+    type SerializeMap = Impossible<(), GmailQueryError>;
+    type SerializeStruct = Impossible<(), GmailQueryError>;
+    type SerializeStructVariant = Impossible<(), GmailQueryError>;
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
         self.push(v.to_string())
@@ -396,7 +396,7 @@ struct SeqQuery<'a> {
 
 impl SerializeSeq for SeqQuery<'_> {
     type Ok = ();
-    type Error = QueryError;
+    type Error = GmailQueryError;
 
     fn serialize_element<T>(&mut self, value: &T) -> Result<(), Self::Error>
     where

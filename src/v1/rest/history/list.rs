@@ -22,7 +22,7 @@ use crate::{
 /// Query parameters for listing history records (`users.history.list`).
 #[derive(Debug, Clone, Default, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailListHistoryParams<'a> {
+pub struct GmailHistoryListParams<'a> {
     /// The history id to start listing changes after.
     pub start_history_id: &'a str,
     /// The label id to restrict history records to.
@@ -38,7 +38,7 @@ pub struct GmailListHistoryParams<'a> {
 /// Response returned when listing history records (`users.history.list`).
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailListHistoryResponse {
+pub struct GmailHistoryListResponse {
     /// The list of history records.
     #[serde(default)]
     pub history: Vec<GmailHistory>,
@@ -51,17 +51,17 @@ pub struct GmailListHistoryResponse {
 }
 
 /// I/O-free coroutine listing Gmail history records (`users.history.list`).
-pub struct GmailListHistory {
-    send: GmailSend<GmailListHistoryResponse>,
+pub struct GmailHistoryList {
+    send: GmailSend<GmailHistoryListResponse>,
 }
 
-impl GmailListHistory {
+impl GmailHistoryList {
     /// Builds the `users.history.list` request from the given
-    /// [`GmailListHistoryParams`].
+    /// [`GmailHistoryListParams`].
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
-        params: &GmailListHistoryParams,
+        params: &GmailHistoryListParams,
     ) -> Result<Self, GmailSendError> {
         debug!("prepare gmail history listing");
         trace!("params: {params:?}");
@@ -75,13 +75,13 @@ impl GmailListHistory {
     }
 }
 
-impl GmailCoroutine for GmailListHistory {
+impl GmailCoroutine for GmailHistoryList {
     type Yield = GmailYield;
-    type Return = Result<GmailSendOutput<GmailListHistoryResponse>, GmailSendError>;
+    type Return = Result<GmailSendOutput<GmailHistoryListResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail history listed");
+        debug!("history listed");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

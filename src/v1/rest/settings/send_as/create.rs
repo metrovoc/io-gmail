@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine creating a send-as alias on a Gmail account
 /// (`users.settings.sendAs.create`).
-pub struct GmailCreateSendAs {
+pub struct GmailSendAsCreate {
     send: GmailSend<GmailSendAs>,
 }
 
-impl GmailCreateSendAs {
+impl GmailSendAsCreate {
     /// Builds the `users.settings.sendAs.create` request for the given alias.
     pub fn new(
         auth: &HttpAuthBearer,
@@ -40,13 +40,13 @@ impl GmailCreateSendAs {
     }
 }
 
-impl GmailCoroutine for GmailCreateSendAs {
+impl GmailCoroutine for GmailSendAsCreate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailSendAs>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail send-as alias created");
+        debug!("send-as alias created");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

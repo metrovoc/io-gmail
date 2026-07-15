@@ -16,11 +16,11 @@ use crate::{
 
 /// I/O-free coroutine deleting a filter from a Gmail account
 /// (`users.settings.filters.delete`).
-pub struct GmailDeleteFilter {
+pub struct GmailFilterDelete {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailDeleteFilter {
+impl GmailFilterDelete {
     /// Builds the `users.settings.filters.delete` request for the given
     /// filter id.
     pub fn new(auth: &HttpAuthBearer, user_id: &str, id: &str) -> Result<Self, GmailSendError> {
@@ -35,13 +35,13 @@ impl GmailDeleteFilter {
     }
 }
 
-impl GmailCoroutine for GmailDeleteFilter {
+impl GmailCoroutine for GmailFilterDelete {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail filter deleted");
+        debug!("filter deleted");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

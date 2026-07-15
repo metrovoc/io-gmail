@@ -16,11 +16,11 @@ use crate::{
 };
 
 /// Gmail REST message send, wrapping the resulting `GmailMessageId`.
-pub struct GmailSendMessage {
+pub struct GmailMessageSend {
     send: GmailSend<GmailMessageId>,
 }
 
-impl GmailSendMessage {
+impl GmailMessageSend {
     /// Builds the `users.messages.send` request for the given message.
     pub fn new(
         auth: &HttpAuthBearer,
@@ -37,13 +37,13 @@ impl GmailSendMessage {
     }
 }
 
-impl GmailCoroutine for GmailSendMessage {
+impl GmailCoroutine for GmailMessageSend {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailMessageId>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail message sent");
+        debug!("message sent");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

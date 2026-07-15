@@ -13,7 +13,7 @@ use crate::{
     coroutine::*,
     gmail_try,
     v1::{
-        query::to_query_pairs,
+        query::{is_false, to_query_pairs},
         rest::drafts::GmailDraft,
         send::{GMAIL_API_BASE, GmailSend, GmailSendError, GmailSendOutput},
     },
@@ -22,7 +22,7 @@ use crate::{
 /// Query parameters for listing drafts (`users.drafts.list`).
 #[derive(Debug, Clone, Default, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailListDraftsParams<'a> {
+pub struct GmailDraftsListParams<'a> {
     /// Search query filtering drafts, using the Gmail search box syntax.
     pub q: Option<&'a str>,
     /// Maximum number of drafts to return per page.
@@ -30,14 +30,14 @@ pub struct GmailListDraftsParams<'a> {
     /// Page token from a previous listing response.
     pub page_token: Option<&'a str>,
     /// Whether to include drafts from SPAM and TRASH.
-    #[serde(skip_serializing_if = "crate::v1::query::is_false")]
+    #[serde(skip_serializing_if = "is_false")]
     pub include_spam_trash: bool,
 }
 
 /// Response returned when listing drafts (`users.drafts.list`).
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailListDraftsResponse {
+pub struct GmailDraftsListResponse {
     /// Drafts of the current page.
     #[serde(default)]
     pub drafts: Vec<GmailDraft>,
@@ -50,17 +50,17 @@ pub struct GmailListDraftsResponse {
 }
 
 /// I/O-free coroutine listing Gmail drafts (`users.drafts.list`).
-pub struct GmailListDrafts {
-    send: GmailSend<GmailListDraftsResponse>,
+pub struct GmailDraftsList {
+    send: GmailSend<GmailDraftsListResponse>,
 }
 
-impl GmailListDrafts {
+impl GmailDraftsList {
     /// Builds the `users.drafts.list` request from the given query
     /// parameters; `user_id` is the mailbox owner (usually `me`).
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
-        params: &GmailListDraftsParams,
+        params: &GmailDraftsListParams,
     ) -> Result<Self, GmailSendError> {
         debug!("prepare gmail drafts listing");
         trace!("params: {params:?}");
@@ -74,13 +74,13 @@ impl GmailListDrafts {
     }
 }
 
-impl GmailCoroutine for GmailListDrafts {
+impl GmailCoroutine for GmailDraftsList {
     type Yield = GmailYield;
-    type Return = Result<GmailSendOutput<GmailListDraftsResponse>, GmailSendError>;
+    type Return = Result<GmailSendOutput<GmailDraftsListResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail drafts listed");
+        debug!("drafts listed");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

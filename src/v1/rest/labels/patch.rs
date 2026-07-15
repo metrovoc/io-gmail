@@ -18,11 +18,11 @@ use crate::{
 };
 
 /// I/O-free coroutine patching a Gmail label (`users.labels.patch`).
-pub struct GmailPatchLabel {
+pub struct GmailLabelPatch {
     send: GmailSend<GmailLabel>,
 }
 
-impl GmailPatchLabel {
+impl GmailLabelPatch {
     /// Builds the `users.labels.patch` request from the given label,
     /// whose id selects the label to patch.
     pub fn new(
@@ -41,13 +41,13 @@ impl GmailPatchLabel {
     }
 }
 
-impl GmailCoroutine for GmailPatchLabel {
+impl GmailCoroutine for GmailLabelPatch {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailLabel>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail label patched");
+        debug!("label patched");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

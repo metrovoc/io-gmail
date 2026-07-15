@@ -2,186 +2,69 @@
 
 Gmail REST API client library for Rust
 
-https://developers.google.com/workspace/gmail/api/reference/rest
+This library is composed of 3 feature-gated layers:
+
+- Low-level **I/O-free** coroutines: no_std-compatible state machines containing the whole Gmail REST logic, usable anywhere
+- Mid-level **light client**: a standard, blocking client wrapping a stream you opened yourself
+- High-level **full client**: the light client plus TCP connections and TLS negotiations handled for you
 
 ## Table of contents
 
 - [Features](#features)
-- [Endpoint coverage](#endpoint-coverage)
+- [API coverage](#api-coverage)
 - [Usage](#usage)
-  - [Coroutine](#coroutine)
-  - [Light client](#light-client)
-  - [Full client](#full-client)
 - [Examples](#examples)
 - [AI disclosure](#ai-disclosure)
 - [License](#license)
 - [Social](#social)
+- [Contributing](#contributing)
 - [Sponsoring](#sponsoring)
 
 ## Features
 
-- **I/O-free** coroutines: `no_std` state machines; no sockets, no async runtime, no `std` required; pump them from any blocking, async or test harness.
-- Light standard, blocking client (requires `client` feature)
+- **I/O-free coroutines**: state machines with no socket, no async runtime and no forced I/O model; run them from any blocking, async or test harness.
+- **Full Gmail REST API v1 surface**: labels, messages, drafts, threads, history, settings and push notification management (see [API coverage](#api-coverage)).
+- **Poll-based mailbox watching**: an infinite watch built on the history API, emitting one Gmail-native diff per tick and re-baselining itself on expired history cursors.
+- **Bearer-token authentication**: requests carry the OAuth 2.0 access token you provide; minting and refreshing it stays under your control.
+- **Light client**: a standard, blocking client exposing one method per first-class verb over a stream you opened yourself (requires `client` feature).
 - Full standard, blocking client with **TLS** support:
-  - [Rustls](https://crates.io/crates/rustls) with ring crypto (requires `rustls-ring` feature)
+  - [Rustls](https://crates.io/crates/rustls) with ring crypto (requires `rustls-ring` feature, enabled by default)
   - [Rustls](https://crates.io/crates/rustls) with aws crypto (requires `rustls-aws` feature)
   - [Native TLS](https://crates.io/crates/native-tls) (requires `native-tls` feature)
-- Full Gmail REST API v1 surface (see [Endpoint coverage](#endpoint-coverage))
-- Poll-based mailbox **watching** built on the history API
 
 > [!TIP]
 > I/O Gmail is written in [Rust](https://www.rust-lang.org/) and uses [cargo features](https://doc.rust-lang.org/cargo/reference/features.html) to gate the client layers. The default feature set is declared in [Cargo.toml](./Cargo.toml) or on [docs.rs](https://docs.rs/crate/io-gmail/latest/features).
 
-## Endpoint coverage
+## API coverage
 
-The `v1::rest` module mirrors the [Gmail REST reference](https://developers.google.com/workspace/gmail/api/reference/rest) one-to-one; every method below is an I/O-free coroutine.
+The coroutines mirror the [Gmail REST API v1 reference](https://developers.google.com/gmail/api/reference/rest) one-to-one; every method below is an I/O-free coroutine:
 
-| Resource                             | Methods                                                                                   |
-|--------------------------------------|-------------------------------------------------------------------------------------------|
-| `users`                              | getProfile, watch, stop                                                                   |
-| `users.labels`                       | list, get, create, update, patch, delete                                                  |
-| `users.messages`                     | list, get, send, insert, import, modify, batchModify, trash, untrash, delete, batchDelete |
-| `users.messages.attachments`         | get                                                                                       |
-| `users.drafts`                       | list, get, create, update, send, delete                                                   |
-| `users.threads`                      | list, get, modify, trash, untrash, delete                                                 |
-| `users.history`                      | list                                                                                      |
-| `users.settings`                     | get/update for imap, pop, vacation, language and autoForwarding                           |
-| `users.settings.delegates`           | list, get, create, delete                                                                 |
-| `users.settings.filters`             | list, get, create, delete                                                                 |
-| `users.settings.forwardingAddresses` | list, get, create, delete                                                                 |
-| `users.settings.sendAs`              | list, get, create, update, patch, delete, verify                                          |
+| Resource                           | Methods                                                                                   |
+|------------------------------------|-------------------------------------------------------------------------------------------|
+| users                              | getProfile, watch, stop                                                                   |
+| users.labels                       | list, get, create, update, patch, delete                                                  |
+| users.messages                     | list, get, send, insert, import, modify, batchModify, trash, untrash, delete, batchDelete |
+| users.messages.attachments         | get                                                                                       |
+| users.drafts                       | list, get, create, update, send, delete                                                   |
+| users.threads                      | list, get, modify, trash, untrash, delete                                                 |
+| users.history                      | list                                                                                      |
+| users.settings                     | get and update for imap, pop, vacation, language and autoForwarding                       |
+| users.settings.delegates           | list, get, create, delete                                                                 |
+| users.settings.filters             | list, get, create, delete                                                                 |
+| users.settings.forwardingAddresses | list, get, create, delete                                                                 |
+| users.settings.sendAs              | list, get, create, update, patch, delete, verify                                          |
 
-On top of the plain methods, `v1::poll_history::GmailPollHistory` composes `users.getProfile` and `users.history.list` into an infinite poll-based mailbox watch emitting one Gmail-native diff per tick.
+On top of the plain methods, a composed coroutine chains getProfile and history.list into an infinite poll-based mailbox watch, the polling alternative to the Pub/Sub push of watch and stop.
 
 ## Usage
 
-I/O Gmail can be consumed three ways, depending on how much of the I/O stack you want to own. Each mode is gated by cargo features. For the crate architecture (layers, coroutine contract, naming, module layout), read the [inline documentation](https://docs.rs/io-gmail/latest/io_gmail).
-
-### Coroutine
-
-Build your own client using the I/O-free coroutines directly, over any stream you own (async shown here):
-
-```toml,ignore
-[dependencies]
-io-gmail = { version = "0.0.1", default-features = false }
-rustls = "0.23"
-rustls-platform-verifier = "0.7"
-tokio = { version = "1", features = ["full"] }
-tokio-rustls = "0.26"
-```
-
-```rust,no_run
-use std::sync::Arc;
-
-use io_gmail::{coroutine::*, v1::rest::users::get_profile::GmailGetProfile};
-use io_http::rfc6750::bearer::HttpAuthBearer;
-use rustls::ClientConfig;
-use rustls_platform_verifier::ConfigVerifierExt;
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpStream,
-};
-use tokio_rustls::TlsConnector;
-
-#[tokio::main]
-async fn main() {
-    // Async TLS connection
-    let config = ClientConfig::with_platform_verifier().unwrap();
-    let connector = TlsConnector::from(Arc::new(config));
-    let server_name = "gmail.googleapis.com".try_into().unwrap();
-    let tcp = TcpStream::connect(("gmail.googleapis.com", 443)).await.unwrap();
-    let mut stream = connector.connect(server_name, tcp).await.unwrap();
-
-    // Run the I/O-free coroutine against the async stream
-    let auth = HttpAuthBearer::new("token");
-    let mut coroutine = GmailGetProfile::new(&auth, "me").unwrap();
-    let mut arg: Option<&[u8]> = None;
-    let mut buf = [0u8; 8192];
-    let mut read_buf = Vec::<u8>::new();
-
-    let out = loop {
-        match coroutine.resume(arg.take()) {
-            GmailCoroutineState::Complete(Ok(out)) => break out,
-            GmailCoroutineState::Yielded(GmailYield::WantsRead) => {
-                let n = stream.read(&mut buf).await.unwrap();
-                read_buf.clear();
-                read_buf.extend_from_slice(&buf[..n]);
-                arg = Some(&read_buf);
-            }
-            GmailCoroutineState::Yielded(GmailYield::WantsWrite(bytes)) => {
-                stream.write_all(&bytes).await.unwrap();
-            }
-            GmailCoroutineState::Complete(Err(err)) => panic!("{err}"),
-        }
-    };
-
-    println!("Email address: {}", out.response.email_address);
-}
-```
-
-### Light client
-
-A standard, blocking client where you manage TCP and TLS on your own:
-
-```toml,ignore
-[dependencies]
-io-gmail = { version = "0.0.1", default-features = false, features = ["client"] }
-rustls = "0.23"
-rustls-platform-verifier = "0.7"
-```
-
-```rust,no_run
-use std::{net::TcpStream, sync::Arc};
-
-use io_gmail::v1::client::GmailClientStd;
-use rustls::{ClientConfig, ClientConnection, StreamOwned};
-use rustls_platform_verifier::ConfigVerifierExt;
-
-// TLS config
-let config = ClientConfig::with_platform_verifier().unwrap();
-let server_name = "gmail.googleapis.com".try_into().unwrap();
-let conn = ClientConnection::new(Arc::new(config), server_name).unwrap();
-let tcp = TcpStream::connect(("gmail.googleapis.com", 443)).unwrap();
-let stream = StreamOwned::new(conn, tcp);
-
-// Standard, blocking client
-let mut client = GmailClientStd::new(stream, "token", Default::default());
-
-let out = client.get_profile().unwrap();
-println!("Email address: {}", out.response.email_address);
-
-let out = client.list_labels().unwrap();
-for label in &out.response.labels {
-    println!("{}: {}", label.id, label.name);
-}
-```
-
-### Full client
-
-A ready-to-use, standard, blocking client with TCP connection and TLS negociation managed for you:
-
-```toml,ignore
-[dependencies]
-io-gmail = "0.0.1" # rustls-ring is enabled by default
-```
-
-```rust,no_run
-use io_gmail::v1::client::GmailClientStd;
-
-let mut client = GmailClientStd::connect("token", Default::default()).unwrap();
-
-let out = client.get_profile().unwrap();
-println!("Email address: {}", out.response.email_address);
-
-let out = client.list_labels().unwrap();
-for label in &out.response.labels {
-    println!("{}: {}", label.id, label.name);
-}
-```
+The whole API is documented on [docs.rs](https://docs.rs/io-gmail/latest/io_gmail), including runnable snippets for every coroutine and client.
 
 ## Examples
 
-Have a look at real-world projects built on top of this library:
+The [./tests](./tests) folder demonstrates real usage: every coroutine runs against scripted in-memory HTTP responses, and an opt-in end-to-end test drives the full client against the live API.
+
+Have also a look at real-world projects built on top of this library:
 
 - [Himalaya CLI](https://github.com/pimalaya/himalaya): CLI to manage emails
 - [Himalaya TUI](https://github.com/pimalaya/himalaya-tui): TUI to manage emails
@@ -190,11 +73,11 @@ Have a look at real-world projects built on top of this library:
 
 This project is developed with AI assistance. This section documents how, so users and downstream packagers can make informed decisions.
 
-- **Tools**: Claude Code (Anthropic), Opus 4.8 and Fable 5, invoked locally with a persistent project-scoped memory and a small set of repo-specific rules.
+- **Tools**: Claude Code (Anthropic), invoked locally with a persistent project-scoped memory and a small set of repo-specific rules.
 - **Used for**: Refactors, mechanical multi-file edits, boilerplate (feature gates, error enums, derive macros, trait impls), test scaffolding, doc polish, exploratory design conversations.
 - **Not used for**: Engineering, critical code, git manipulation (commit, merge, rebase…), real-world tests.
-- **Verification**: Every AI-assisted change is read, compiled, tested, and formatted before commit (`nix develop --command cargo check / cargo test / cargo fmt`). Behavioural correctness is verified against the Gmail REST API reference, not assumed from the model output. Tests are never adjusted to fit AI-generated code; the code is adjusted to fit correct behaviour.
-- **Limitations**: AI models occasionally produce code that compiles and passes tests but is subtly wrong: off-by-one errors, missed edge cases, plausible but nonexistent APIs, stale spec references. The verification workflow catches most of this; it does not catch all of it. Bug reports are welcome and taken seriously.
+- **Verification**: Every AI-assisted change is read, compiled, tested, and formatted before commit. Behavioural correctness is verified against the relevant RFC or upstream spec, not assumed from the model output. Tests are never adjusted to fit AI-generated code; the code is adjusted to fit correct behaviour.
+- **Limitations**: AI models occasionally produce code that compiles and passes tests but is subtly wrong. The verification workflow catches most of this; it does not catch all of it. Bug reports are welcome and taken seriously.
 - **Last reviewed**: 15/07/2026
 
 ## License
@@ -211,6 +94,10 @@ at your option.
 - Chat on [Matrix](https://matrix.to/#/#pimalaya:matrix.org)
 - News on [Mastodon](https://fosstodon.org/@pimalaya) or [RSS](https://fosstodon.org/@pimalaya.rss)
 - Mail at [pimalaya.org@posteo.net](mailto:pimalaya.org@posteo.net)
+
+## Contributing
+
+Contributions are welcome: start with [CONTRIBUTING.md](./CONTRIBUTING.md), which opens with the Pimalaya-wide guides to read first.
 
 ## Sponsoring
 

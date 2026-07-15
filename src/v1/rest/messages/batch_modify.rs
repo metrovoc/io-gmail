@@ -24,11 +24,11 @@ struct GmailMessageBatchModifyRequest<'a> {
 }
 
 /// Gmail REST batch message label modification, yielding no response body.
-pub struct GmailBatchModifyMessages {
+pub struct GmailMessagesBatchModify {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailBatchModifyMessages {
+impl GmailMessagesBatchModify {
     /// Builds the `users.messages.batchModify` request adding and
     /// removing the given label ids on the given message ids.
     pub fn new(
@@ -56,13 +56,13 @@ impl GmailBatchModifyMessages {
     }
 }
 
-impl GmailCoroutine for GmailBatchModifyMessages {
+impl GmailCoroutine for GmailMessagesBatchModify {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail messages batch modified");
+        debug!("messages batch modified");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

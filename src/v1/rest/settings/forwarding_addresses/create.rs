@@ -20,11 +20,11 @@ use crate::{
 
 /// I/O-free coroutine creating a forwarding address on a Gmail account
 /// (`users.settings.forwardingAddresses.create`).
-pub struct GmailCreateForwardingAddress {
+pub struct GmailForwardingAddressCreate {
     send: GmailSend<GmailForwardingAddress>,
 }
 
-impl GmailCreateForwardingAddress {
+impl GmailForwardingAddressCreate {
     /// Builds the `users.settings.forwardingAddresses.create` request for
     /// the given forwarding address.
     pub fn new(
@@ -43,13 +43,13 @@ impl GmailCreateForwardingAddress {
     }
 }
 
-impl GmailCoroutine for GmailCreateForwardingAddress {
+impl GmailCoroutine for GmailForwardingAddressCreate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailForwardingAddress>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail forwarding address created");
+        debug!("forwarding address created");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

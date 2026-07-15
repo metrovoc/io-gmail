@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine getting the Gmail IMAP access settings
 /// (`users.settings.getImap`).
-pub struct GmailGetImap {
+pub struct GmailImapGet {
     send: GmailSend<GmailImapSettings>,
 }
 
-impl GmailGetImap {
+impl GmailImapGet {
     /// Builds the `users.settings.getImap` request for the given user.
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail imap settings retrieval");
@@ -36,13 +36,13 @@ impl GmailGetImap {
     }
 }
 
-impl GmailCoroutine for GmailGetImap {
+impl GmailCoroutine for GmailImapGet {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailImapSettings>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail imap settings retrieved");
+        debug!("imap settings retrieved");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

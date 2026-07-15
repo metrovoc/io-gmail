@@ -24,11 +24,11 @@ struct GmailMessageModifyRequest<'a> {
 }
 
 /// Gmail REST message label modification, wrapping the updated `GmailMessage`.
-pub struct GmailModifyMessage {
+pub struct GmailMessageModify {
     send: GmailSend<GmailMessage>,
 }
 
-impl GmailModifyMessage {
+impl GmailMessageModify {
     /// Builds the `users.messages.modify` request adding and removing
     /// the given label ids on the given message.
     ///
@@ -63,13 +63,13 @@ impl GmailModifyMessage {
     }
 }
 
-impl GmailCoroutine for GmailModifyMessage {
+impl GmailCoroutine for GmailMessageModify {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailMessage>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail message modified");
+        debug!("message modified");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

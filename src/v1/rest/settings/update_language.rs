@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine updating the Gmail display language settings
 /// (`users.settings.updateLanguage`).
-pub struct GmailUpdateLanguage {
+pub struct GmailLanguageUpdate {
     send: GmailSend<GmailLanguageSettings>,
 }
 
-impl GmailUpdateLanguage {
+impl GmailLanguageUpdate {
     /// Builds the `users.settings.updateLanguage` request wrapping the given
     /// settings.
     pub fn new(
@@ -42,13 +42,13 @@ impl GmailUpdateLanguage {
     }
 }
 
-impl GmailCoroutine for GmailUpdateLanguage {
+impl GmailCoroutine for GmailLanguageUpdate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailLanguageSettings>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail language settings updated");
+        debug!("language settings updated");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

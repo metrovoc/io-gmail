@@ -45,7 +45,7 @@ impl GmailCoroutine for GmailWatch {
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail watch established");
+        debug!("watch established");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

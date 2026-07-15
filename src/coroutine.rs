@@ -10,13 +10,17 @@ use alloc::vec::Vec;
 /// caller must fulfill, or the terminal value.
 #[derive(Debug)]
 pub enum GmailCoroutineState<Y, R> {
+    /// The coroutine needs I/O before it can go further.
     Yielded(Y),
+    /// The coroutine finished with its terminal value.
     Complete(R),
 }
 
 /// A resumable, I/O-free Gmail operation.
 pub trait GmailCoroutine {
+    /// The I/O request type yielded while the exchange is in progress.
     type Yield;
+    /// The terminal value type produced when the exchange completes.
     type Return;
 
     /// Advances the coroutine with the bytes read since the last yield
@@ -28,7 +32,9 @@ pub trait GmailCoroutine {
 /// write the given bytes to it.
 #[derive(Debug)]
 pub enum GmailYield {
+    /// The coroutine wants bytes read from the stream.
     WantsRead,
+    /// The coroutine wants the given bytes written to the stream.
     WantsWrite(Vec<u8>),
 }
 

@@ -18,11 +18,11 @@ use crate::{
 };
 
 /// Gmail REST draft creation, wrapping the created `GmailDraft`.
-pub struct GmailCreateDraft {
+pub struct GmailDraftCreate {
     send: GmailSend<GmailDraft>,
 }
 
-impl GmailCreateDraft {
+impl GmailDraftCreate {
     /// Builds the `users.drafts.create` request wrapping the given draft.
     pub fn new(
         auth: &HttpAuthBearer,
@@ -39,13 +39,13 @@ impl GmailCreateDraft {
     }
 }
 
-impl GmailCoroutine for GmailCreateDraft {
+impl GmailCoroutine for GmailDraftCreate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailDraft>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail draft created");
+        debug!("draft created");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

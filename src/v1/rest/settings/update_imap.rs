@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine updating the Gmail IMAP access settings
 /// (`users.settings.updateImap`).
-pub struct GmailUpdateImap {
+pub struct GmailImapUpdate {
     send: GmailSend<GmailImapSettings>,
 }
 
-impl GmailUpdateImap {
+impl GmailImapUpdate {
     /// Builds the `users.settings.updateImap` request wrapping the given
     /// settings.
     pub fn new(
@@ -41,13 +41,13 @@ impl GmailUpdateImap {
     }
 }
 
-impl GmailCoroutine for GmailUpdateImap {
+impl GmailCoroutine for GmailImapUpdate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailImapSettings>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail imap settings updated");
+        debug!("imap settings updated");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine getting a forwarding address of a Gmail account
 /// (`users.settings.forwardingAddresses.get`).
-pub struct GmailGetForwardingAddress {
+pub struct GmailForwardingAddressGet {
     send: GmailSend<GmailForwardingAddress>,
 }
 
-impl GmailGetForwardingAddress {
+impl GmailForwardingAddressGet {
     /// Builds the `users.settings.forwardingAddresses.get` request for
     /// the given forwarding email.
     pub fn new(
@@ -43,13 +43,13 @@ impl GmailGetForwardingAddress {
     }
 }
 
-impl GmailCoroutine for GmailGetForwardingAddress {
+impl GmailCoroutine for GmailForwardingAddressGet {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailForwardingAddress>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail forwarding address retrieved");
+        debug!("forwarding address retrieved");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

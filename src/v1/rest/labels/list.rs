@@ -12,17 +12,17 @@ use crate::{
     coroutine::*,
     gmail_try,
     v1::{
-        rest::labels::GmailListLabelsResponse,
+        rest::labels::GmailLabelsListResponse,
         send::{GMAIL_API_BASE, GmailSend, GmailSendError, GmailSendOutput},
     },
 };
 
 /// I/O-free coroutine listing the Gmail labels (`users.labels.list`).
-pub struct GmailListLabels {
-    send: GmailSend<GmailListLabelsResponse>,
+pub struct GmailLabelsList {
+    send: GmailSend<GmailLabelsListResponse>,
 }
 
-impl GmailListLabels {
+impl GmailLabelsList {
     /// Builds the `users.labels.list` request for the given user id
     /// (the mailbox owner, usually `me`).
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
@@ -36,13 +36,13 @@ impl GmailListLabels {
     }
 }
 
-impl GmailCoroutine for GmailListLabels {
+impl GmailCoroutine for GmailLabelsList {
     type Yield = GmailYield;
-    type Return = Result<GmailSendOutput<GmailListLabelsResponse>, GmailSendError>;
+    type Return = Result<GmailSendOutput<GmailLabelsListResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail labels listed");
+        debug!("labels listed");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

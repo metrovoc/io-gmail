@@ -13,7 +13,7 @@ use crate::{
     coroutine::*,
     gmail_try,
     v1::{
-        query::to_query_pairs,
+        query::{is_false, to_query_pairs},
         rest::threads::GmailThreadSummary,
         send::{GMAIL_API_BASE, GmailSend, GmailSendError, GmailSendOutput},
     },
@@ -22,7 +22,7 @@ use crate::{
 /// Query parameters for listing threads (`users.threads.list`).
 #[derive(Debug, Clone, Default, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailListThreadsParams<'a> {
+pub struct GmailThreadsListParams<'a> {
     /// Search query filtering threads, using the Gmail search box syntax.
     pub q: Option<&'a str>,
     /// Label ids that returned threads must all carry.
@@ -32,14 +32,14 @@ pub struct GmailListThreadsParams<'a> {
     /// Page token from a previous listing response.
     pub page_token: Option<&'a str>,
     /// Whether to include threads from SPAM and TRASH.
-    #[serde(skip_serializing_if = "crate::v1::query::is_false")]
+    #[serde(skip_serializing_if = "is_false")]
     pub include_spam_trash: bool,
 }
 
 /// Gmail REST thread listing response (one page of thread summaries).
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailListThreadsResponse {
+pub struct GmailThreadsListResponse {
     /// Thread summaries of the current page.
     #[serde(default)]
     pub threads: Vec<GmailThreadSummary>,
@@ -52,17 +52,17 @@ pub struct GmailListThreadsResponse {
 }
 
 /// Gmail REST thread listing, wrapping a page of thread summaries.
-pub struct GmailListThreads {
-    send: GmailSend<GmailListThreadsResponse>,
+pub struct GmailThreadsList {
+    send: GmailSend<GmailThreadsListResponse>,
 }
 
-impl GmailListThreads {
+impl GmailThreadsList {
     /// Builds the `users.threads.list` request from the given query
     /// parameters; `user_id` is the mailbox owner (usually `me`).
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
-        params: &GmailListThreadsParams,
+        params: &GmailThreadsListParams,
     ) -> Result<Self, GmailSendError> {
         debug!("prepare gmail threads listing");
         trace!("params: {params:?}");
@@ -76,13 +76,13 @@ impl GmailListThreads {
     }
 }
 
-impl GmailCoroutine for GmailListThreads {
+impl GmailCoroutine for GmailThreadsList {
     type Yield = GmailYield;
-    type Return = Result<GmailSendOutput<GmailListThreadsResponse>, GmailSendError>;
+    type Return = Result<GmailSendOutput<GmailThreadsListResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail threads listed");
+        debug!("threads listed");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

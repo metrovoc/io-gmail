@@ -18,11 +18,11 @@ use crate::{
 };
 
 /// I/O-free coroutine creating a Gmail label (`users.labels.create`).
-pub struct GmailCreateLabel {
+pub struct GmailLabelCreate {
     send: GmailSend<GmailLabel>,
 }
 
-impl GmailCreateLabel {
+impl GmailLabelCreate {
     /// Builds the `users.labels.create` request from the given label.
     pub fn new(
         auth: &HttpAuthBearer,
@@ -44,13 +44,13 @@ impl GmailCreateLabel {
     }
 }
 
-impl GmailCoroutine for GmailCreateLabel {
+impl GmailCoroutine for GmailLabelCreate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailLabel>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail label created");
+        debug!("label created");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

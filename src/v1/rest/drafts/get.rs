@@ -19,11 +19,11 @@ use crate::{
 };
 
 /// Gmail REST draft retrieval, wrapping a `GmailDraft` response.
-pub struct GmailGetDraft {
+pub struct GmailDraftGet {
     send: GmailSend<GmailDraft>,
 }
 
-impl GmailGetDraft {
+impl GmailDraftGet {
     /// Builds the `users.drafts.get` request for the given draft id
     /// and message format.
     pub fn new(
@@ -48,13 +48,13 @@ impl GmailGetDraft {
     }
 }
 
-impl GmailCoroutine for GmailGetDraft {
+impl GmailCoroutine for GmailDraftGet {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailDraft>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail draft retrieved");
+        debug!("draft retrieved");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

@@ -17,11 +17,11 @@ use crate::{
 
 /// I/O-free coroutine deleting a forwarding address from a Gmail
 /// account (`users.settings.forwardingAddresses.delete`).
-pub struct GmailDeleteForwardingAddress {
+pub struct GmailForwardingAddressDelete {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailDeleteForwardingAddress {
+impl GmailForwardingAddressDelete {
     /// Builds the `users.settings.forwardingAddresses.delete` request for
     /// the given forwarding email.
     pub fn new(
@@ -41,13 +41,13 @@ impl GmailDeleteForwardingAddress {
     }
 }
 
-impl GmailCoroutine for GmailDeleteForwardingAddress {
+impl GmailCoroutine for GmailForwardingAddressDelete {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail forwarding address deleted");
+        debug!("forwarding address deleted");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

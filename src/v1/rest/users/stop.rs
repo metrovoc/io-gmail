@@ -39,7 +39,7 @@ impl GmailCoroutine for GmailStop {
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail watch stopped");
+        debug!("watch stopped");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

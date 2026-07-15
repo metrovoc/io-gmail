@@ -1,12 +1,16 @@
-//! Gmail history resource types.
+//! Gmail history record (users.history).
 //!
-//! <https://developers.google.com/gmail/api/reference/rest/v1/users.history>
+//! One mailbox change: added, deleted and relabelled messages grouped
+//! under a single history id.
 
 use alloc::{string::String, vec::Vec};
 
 use serde::{Deserialize, Serialize};
 
-use crate::v1::rest::messages::GmailMessage;
+use crate::v1::rest::{
+    history::{GmailHistoryLabel, GmailHistoryMessage},
+    messages::GmailMessage,
+};
 
 /// A Gmail history record resource.
 ///
@@ -33,33 +37,4 @@ pub struct GmailHistory {
     /// The labels removed from messages in this history record.
     #[serde(default)]
     pub labels_removed: Vec<GmailHistoryLabel>,
-}
-
-/// A message involved in a history addition or deletion change.
-#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct GmailHistoryMessage {
-    /// The affected message.
-    pub message: GmailMessage,
-}
-
-/// A label change on a message in a history record.
-#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct GmailHistoryLabel {
-    /// The affected message.
-    pub message: GmailMessage,
-    /// The ids of the labels added to or removed from the message.
-    #[serde(default)]
-    pub label_ids: Vec<String>,
-}
-
-/// Kind of change to filter the history list on (`historyTypes`).
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub enum GmailHistoryType {
-    MessageAdded,
-    MessageDeleted,
-    LabelAdded,
-    LabelRemoved,
 }

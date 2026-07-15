@@ -20,11 +20,11 @@ use crate::{
 
 /// I/O-free coroutine updating the Gmail auto-forwarding settings
 /// (`users.settings.updateAutoForwarding`).
-pub struct GmailUpdateAutoForwarding {
+pub struct GmailAutoForwardingUpdate {
     send: GmailSend<GmailAutoForwarding>,
 }
 
-impl GmailUpdateAutoForwarding {
+impl GmailAutoForwardingUpdate {
     /// Builds the `users.settings.updateAutoForwarding` request wrapping the
     /// given settings.
     pub fn new(
@@ -43,13 +43,13 @@ impl GmailUpdateAutoForwarding {
     }
 }
 
-impl GmailCoroutine for GmailUpdateAutoForwarding {
+impl GmailCoroutine for GmailAutoForwardingUpdate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailAutoForwarding>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail auto-forwarding settings updated");
+        debug!("auto-forwarding settings updated");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

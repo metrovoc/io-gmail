@@ -24,7 +24,7 @@ use io_gmail::v1::{
     client::{GmailClientStd, GmailClientStdConnectOptions},
     rest::{
         labels::GmailLabel,
-        messages::{GmailMessage, GmailMessageFormat, encode_raw, list::GmailListMessagesParams},
+        messages::{GmailMessage, GmailMessageFormat, encode_raw, list::GmailMessagesListParams},
     },
 };
 use pimalaya_stream::tls::Tls;
@@ -50,39 +50,39 @@ fn gmail() {
     let label_name = format!("io-gmail-test-{ts}");
     let label_name_renamed = format!("{label_name}-renamed");
 
-    // NOTE: ── get profile ──
+    // NOTE: get profile
 
-    let profile = client.get_profile().expect("profile get").response;
+    let profile = client.profile_get().expect("profile get").response;
     let email = profile.email_address.clone();
     assert!(!email.is_empty(), "profile should expose an email address");
 
-    // NOTE: ── list labels (baseline) ──
+    // NOTE: list labels (baseline)
 
-    let labels = client.list_labels().expect("labels list").response;
+    let labels = client.labels_list().expect("labels list").response;
     assert!(
         labels.labels.iter().any(|label| label.id == "INBOX"),
         "labels list should contain the INBOX system label"
     );
 
-    // NOTE: ── create label ──
+    // NOTE: create label
 
     let new_label = GmailLabel {
         name: label_name.clone(),
         ..Default::default()
     };
     let label = client
-        .create_label(&new_label)
+        .label_create(&new_label)
         .expect("label create")
         .response;
     let label_id = label.id.clone();
     assert_eq!(label.name, label_name, "created label name mismatch");
 
-    // NOTE: ── get label (verify creation) ──
+    // NOTE: get label (verify creation)
 
-    let fetched = client.get_label(&label_id).expect("label get").response;
+    let fetched = client.label_get(&label_id).expect("label get").response;
     assert_eq!(fetched.id, label_id, "label get id mismatch");
 
-    // NOTE: ── update label (rename) ──
+    // NOTE: update label (rename)
 
     let renamed_label = GmailLabel {
         id: label_id.clone(),
@@ -90,7 +90,7 @@ fn gmail() {
         ..Default::default()
     };
     let renamed = client
-        .update_label(&renamed_label)
+        .label_update(&renamed_label)
         .expect("label update")
         .response;
     assert_eq!(
@@ -98,7 +98,7 @@ fn gmail() {
         "label rename not reflected"
     );
 
-    // NOTE: ── send message ──
+    // NOTE: send message
 
     let eml = build_eml(&email).into_bytes();
     let message = GmailMessage {
@@ -106,23 +106,23 @@ fn gmail() {
         ..Default::default()
     };
     let sent = client
-        .send_message(&message)
+        .message_send(&message)
         .expect("message send")
         .response;
     let message_id = sent.id.clone();
 
-    // NOTE: ── get message (verify send) ──
+    // NOTE: get message (verify send)
 
     let message = client
-        .get_message(&message_id, GmailMessageFormat::Full, &[])
+        .message_get(&message_id, GmailMessageFormat::Full, &[])
         .expect("message get")
         .response;
     assert_eq!(message.id, message_id, "message get id mismatch");
 
-    // NOTE: ── modify message (add then remove the test label) ──
+    // NOTE: modify message (add then remove the test label)
 
     let labelled = client
-        .modify_message(&message_id, std::slice::from_ref(&label_id), &[])
+        .message_modify(&message_id, std::slice::from_ref(&label_id), &[])
         .expect("message modify add")
         .response;
     assert!(
@@ -131,7 +131,7 @@ fn gmail() {
     );
 
     let unlabelled = client
-        .modify_message(&message_id, &[], std::slice::from_ref(&label_id))
+        .message_modify(&message_id, &[], std::slice::from_ref(&label_id))
         .expect("message modify remove")
         .response;
     assert!(
@@ -139,10 +139,10 @@ fn gmail() {
         "message should not carry the test label after removal"
     );
 
-    // NOTE: ── list messages (find the sent message) ──
+    // NOTE: list messages (find the sent message)
 
     let listed = client
-        .list_messages(&GmailListMessagesParams {
+        .messages_list(&GmailMessagesListParams {
             q: Some("subject:io-gmail"),
             max_results: Some(10),
             include_spam_trash: true,
@@ -155,10 +155,10 @@ fn gmail() {
         "messages list should surface the sent message"
     );
 
-    // NOTE: ── trash then untrash message ──
+    // NOTE: trash then untrash message
 
     let trashed = client
-        .trash_message(&message_id)
+        .message_trash(&message_id)
         .expect("message trash")
         .response;
     assert!(
@@ -167,7 +167,7 @@ fn gmail() {
     );
 
     let untrashed = client
-        .untrash_message(&message_id)
+        .message_untrash(&message_id)
         .expect("message untrash")
         .response;
     assert!(
@@ -175,10 +175,10 @@ fn gmail() {
         "untrashed message should no longer carry the TRASH label"
     );
 
-    // NOTE: ── cleanup: delete the message then the label ──
+    // NOTE: cleanup: delete the message then the label
 
-    client.delete_message(&message_id).expect("message delete");
-    client.delete_label(&label_id).expect("label delete");
+    client.message_delete(&message_id).expect("message delete");
+    client.label_delete(&label_id).expect("label delete");
 }
 
 fn build_eml(email: &str) -> String {

@@ -24,11 +24,11 @@ struct GmailThreadModifyRequest<'a> {
 }
 
 /// Gmail REST thread label modification, wrapping the updated `GmailThread`.
-pub struct GmailModifyThread {
+pub struct GmailThreadModify {
     send: GmailSend<GmailThread>,
 }
 
-impl GmailModifyThread {
+impl GmailThreadModify {
     /// Builds the `users.threads.modify` request from the given label ids.
     ///
     /// Fails with [`GmailSendError::InvalidRequest`] when both label id
@@ -62,13 +62,13 @@ impl GmailModifyThread {
     }
 }
 
-impl GmailCoroutine for GmailModifyThread {
+impl GmailCoroutine for GmailThreadModify {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailThread>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail thread modified");
+        debug!("thread modified");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

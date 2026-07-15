@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine getting a delegate of a Gmail account
 /// (`users.settings.delegates.get`).
-pub struct GmailGetDelegate {
+pub struct GmailDelegateGet {
     send: GmailSend<GmailDelegate>,
 }
 
-impl GmailGetDelegate {
+impl GmailDelegateGet {
     /// Builds the `users.settings.delegates.get` request for the given
     /// delegate email.
     pub fn new(
@@ -43,13 +43,13 @@ impl GmailGetDelegate {
     }
 }
 
-impl GmailCoroutine for GmailGetDelegate {
+impl GmailCoroutine for GmailDelegateGet {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailDelegate>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail delegate retrieved");
+        debug!("delegate retrieved");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

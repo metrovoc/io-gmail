@@ -16,11 +16,11 @@ use crate::{
 };
 
 /// Gmail REST attachment retrieval, wrapping a `GmailMessagePartBody`.
-pub struct GmailGetAttachment {
+pub struct GmailAttachmentGet {
     send: GmailSend<GmailMessagePartBody>,
 }
 
-impl GmailGetAttachment {
+impl GmailAttachmentGet {
     /// Builds the `users.messages.attachments.get` request for the
     /// given message and attachment ids.
     pub fn new(
@@ -42,13 +42,13 @@ impl GmailGetAttachment {
     }
 }
 
-impl GmailCoroutine for GmailGetAttachment {
+impl GmailCoroutine for GmailAttachmentGet {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailMessagePartBody>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail attachment retrieved");
+        debug!("attachment retrieved");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

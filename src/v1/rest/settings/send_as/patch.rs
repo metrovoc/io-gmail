@@ -19,11 +19,11 @@ use crate::{
 
 /// I/O-free coroutine patching a send-as alias of a Gmail account
 /// (`users.settings.sendAs.patch`).
-pub struct GmailPatchSendAs {
+pub struct GmailSendAsPatch {
     send: GmailSend<GmailSendAs>,
 }
 
-impl GmailPatchSendAs {
+impl GmailSendAsPatch {
     /// Builds the `users.settings.sendAs.patch` request for the given alias.
     pub fn new(
         auth: &HttpAuthBearer,
@@ -42,13 +42,13 @@ impl GmailPatchSendAs {
     }
 }
 
-impl GmailCoroutine for GmailPatchSendAs {
+impl GmailCoroutine for GmailSendAsPatch {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailSendAs>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail send-as alias patched");
+        debug!("send-as alias patched");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

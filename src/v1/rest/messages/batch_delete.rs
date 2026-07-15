@@ -21,11 +21,11 @@ struct GmailMessageBatchDeleteRequest<'a> {
 }
 
 /// Gmail REST batch message deletion, yielding no response body.
-pub struct GmailBatchDeleteMessages {
+pub struct GmailMessagesBatchDelete {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailBatchDeleteMessages {
+impl GmailMessagesBatchDelete {
     /// Builds the `users.messages.batchDelete` request for the given
     /// message ids.
     pub fn new(
@@ -45,13 +45,13 @@ impl GmailBatchDeleteMessages {
     }
 }
 
-impl GmailCoroutine for GmailBatchDeleteMessages {
+impl GmailCoroutine for GmailMessagesBatchDelete {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail messages batch deleted");
+        debug!("messages batch deleted");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }

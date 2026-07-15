@@ -16,11 +16,11 @@ use crate::{
 
 /// I/O-free coroutine deleting a send-as alias from a Gmail account
 /// (`users.settings.sendAs.delete`).
-pub struct GmailDeleteSendAs {
+pub struct GmailSendAsDelete {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailDeleteSendAs {
+impl GmailSendAsDelete {
     /// Builds the `users.settings.sendAs.delete` request for the given alias.
     pub fn new(
         auth: &HttpAuthBearer,
@@ -38,13 +38,13 @@ impl GmailDeleteSendAs {
     }
 }
 
-impl GmailCoroutine for GmailDeleteSendAs {
+impl GmailCoroutine for GmailSendAsDelete {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);
-        debug!("gmail send-as alias deleted");
+        debug!("send-as alias deleted");
         trace!("out: {out:?}");
         GmailCoroutineState::Complete(Ok(out))
     }
