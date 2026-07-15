@@ -18,11 +18,13 @@ use crate::{
 };
 
 /// Gmail REST draft update, wrapping the updated `GmailDraft`.
-pub struct GmailDraftUpdate {
+pub struct GmailUpdateDraft {
     send: GmailSend<GmailDraft>,
 }
 
-impl GmailDraftUpdate {
+impl GmailUpdateDraft {
+    /// Builds the `users.drafts.update` request wrapping the given draft,
+    /// addressed by its id.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -40,7 +42,7 @@ impl GmailDraftUpdate {
     }
 }
 
-impl GmailCoroutine for GmailDraftUpdate {
+impl GmailCoroutine for GmailUpdateDraft {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailDraft>, GmailSendError>;
 

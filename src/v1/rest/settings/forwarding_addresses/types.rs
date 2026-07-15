@@ -12,8 +12,10 @@ use crate::v1::rest::settings::GmailVerificationStatus;
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GmailForwardingAddress {
+    /// Email address messages can be forwarded to.
     #[serde(default)]
     pub forwarding_email: String,
+    /// Verification status of the forwarding address.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verification_status: Option<GmailVerificationStatus>,
 }

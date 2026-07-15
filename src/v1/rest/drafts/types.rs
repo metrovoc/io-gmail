@@ -12,8 +12,10 @@ use crate::v1::rest::messages::GmailMessage;
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GmailDraft {
+    /// Immutable identifier of the draft.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub id: String,
+    /// Message content of the draft.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<GmailMessage>,
 }

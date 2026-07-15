@@ -14,11 +14,14 @@ use crate::{
     v1::send::{GMAIL_API_BASE, GmailNoResponse, GmailSend, GmailSendError, GmailSendOutput},
 };
 
-pub struct GmailSendAsVerify {
+/// I/O-free coroutine verifying a Gmail send-as alias
+/// (`users.settings.sendAs.verify`).
+pub struct GmailVerifySendAs {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailSendAsVerify {
+impl GmailVerifySendAs {
+    /// Builds the `users.settings.sendAs.verify` request for the given alias.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -36,7 +39,7 @@ impl GmailSendAsVerify {
     }
 }
 
-impl GmailCoroutine for GmailSendAsVerify {
+impl GmailCoroutine for GmailVerifySendAs {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 

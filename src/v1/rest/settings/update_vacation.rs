@@ -17,11 +17,15 @@ use crate::{
     },
 };
 
-pub struct GmailVacationUpdate {
+/// I/O-free coroutine updating the Gmail vacation responder settings
+/// (`users.settings.updateVacation`).
+pub struct GmailUpdateVacation {
     send: GmailSend<GmailVacationSettings>,
 }
 
-impl GmailVacationUpdate {
+impl GmailUpdateVacation {
+    /// Builds the `users.settings.updateVacation` request wrapping the given
+    /// settings.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -38,7 +42,7 @@ impl GmailVacationUpdate {
     }
 }
 
-impl GmailCoroutine for GmailVacationUpdate {
+impl GmailCoroutine for GmailUpdateVacation {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailVacationSettings>, GmailSendError>;
 

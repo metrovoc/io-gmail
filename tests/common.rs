@@ -1,7 +1,12 @@
+//! Shared offline test helpers: a scripted coroutine loop and canned
+//! HTTP response builders, so no test needs a network.
+
 #![allow(dead_code)]
 
 use io_gmail::coroutine::*;
 
+/// Runs the coroutine to completion against one canned response,
+/// returning its terminal value and everything it wrote.
 pub fn run<C: GmailCoroutine<Yield = GmailYield>>(
     coroutine: &mut C,
     response: &[u8],
@@ -28,6 +33,7 @@ pub fn run<C: GmailCoroutine<Yield = GmailYield>>(
     }
 }
 
+/// Builds a keep-alive HTTP response carrying a JSON body.
 pub fn json_response(status_line: &str, body: &str) -> Vec<u8> {
     http_response(
         status_line,
@@ -39,6 +45,7 @@ pub fn json_response(status_line: &str, body: &str) -> Vec<u8> {
     )
 }
 
+/// Builds a bodiless HTTP response closing the connection.
 pub fn empty_response(status_line: &str) -> Vec<u8> {
     http_response(status_line, &[("Connection", "close")], &[])
 }

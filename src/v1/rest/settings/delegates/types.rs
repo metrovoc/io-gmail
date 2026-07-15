@@ -12,8 +12,10 @@ use crate::v1::rest::settings::GmailVerificationStatus;
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GmailDelegate {
+    /// Email address of the delegate.
     #[serde(default)]
     pub delegate_email: String,
+    /// Verification status of the delegate.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verification_status: Option<GmailVerificationStatus>,
 }

@@ -14,11 +14,14 @@ use crate::{
     v1::send::{GMAIL_API_BASE, GmailNoResponse, GmailSend, GmailSendError, GmailSendOutput},
 };
 
+/// I/O-free coroutine stopping Gmail push notifications (`users.stop`).
 pub struct GmailStop {
     send: GmailSend<GmailNoResponse>,
 }
 
 impl GmailStop {
+    /// Builds the `users.stop` request for the given user id (the
+    /// mailbox owner, usually `me`).
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail watch stop");
         trace!("user_id: {user_id:?}");

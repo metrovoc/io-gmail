@@ -19,11 +19,13 @@ use crate::{
 };
 
 /// Gmail REST draft retrieval, wrapping a `GmailDraft` response.
-pub struct GmailDraftGet {
+pub struct GmailGetDraft {
     send: GmailSend<GmailDraft>,
 }
 
-impl GmailDraftGet {
+impl GmailGetDraft {
+    /// Builds the `users.drafts.get` request for the given draft id
+    /// and message format.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -46,7 +48,7 @@ impl GmailDraftGet {
     }
 }
 
-impl GmailCoroutine for GmailDraftGet {
+impl GmailCoroutine for GmailGetDraft {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailDraft>, GmailSendError>;
 

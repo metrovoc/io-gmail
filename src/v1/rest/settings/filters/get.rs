@@ -17,11 +17,15 @@ use crate::{
     },
 };
 
-pub struct GmailFilterGet {
+/// I/O-free coroutine getting a filter of a Gmail account
+/// (`users.settings.filters.get`).
+pub struct GmailGetFilter {
     send: GmailSend<GmailFilter>,
 }
 
-impl GmailFilterGet {
+impl GmailGetFilter {
+    /// Builds the `users.settings.filters.get` request for the given filter
+    /// id.
     pub fn new(auth: &HttpAuthBearer, user_id: &str, id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail filter retrieval");
         trace!("id: {id:?}");
@@ -34,7 +38,7 @@ impl GmailFilterGet {
     }
 }
 
-impl GmailCoroutine for GmailFilterGet {
+impl GmailCoroutine for GmailGetFilter {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailFilter>, GmailSendError>;
 

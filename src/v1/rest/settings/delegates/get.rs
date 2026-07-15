@@ -17,11 +17,15 @@ use crate::{
     },
 };
 
-pub struct GmailDelegateGet {
+/// I/O-free coroutine getting a delegate of a Gmail account
+/// (`users.settings.delegates.get`).
+pub struct GmailGetDelegate {
     send: GmailSend<GmailDelegate>,
 }
 
-impl GmailDelegateGet {
+impl GmailGetDelegate {
+    /// Builds the `users.settings.delegates.get` request for the given
+    /// delegate email.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -39,7 +43,7 @@ impl GmailDelegateGet {
     }
 }
 
-impl GmailCoroutine for GmailDelegateGet {
+impl GmailCoroutine for GmailGetDelegate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailDelegate>, GmailSendError>;
 

@@ -24,11 +24,16 @@ struct GmailMessageModifyRequest<'a> {
 }
 
 /// Gmail REST message label modification, wrapping the updated `GmailMessage`.
-pub struct GmailMessageModify {
+pub struct GmailModifyMessage {
     send: GmailSend<GmailMessage>,
 }
 
-impl GmailMessageModify {
+impl GmailModifyMessage {
+    /// Builds the `users.messages.modify` request adding and removing
+    /// the given label ids on the given message.
+    ///
+    /// Fails with [`GmailSendError::InvalidRequest`] when both label
+    /// lists are empty.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -58,7 +63,7 @@ impl GmailMessageModify {
     }
 }
 
-impl GmailCoroutine for GmailMessageModify {
+impl GmailCoroutine for GmailModifyMessage {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailMessage>, GmailSendError>;
 

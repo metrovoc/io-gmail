@@ -17,11 +17,14 @@ use crate::{
     },
 };
 
-pub struct GmailImapGet {
+/// I/O-free coroutine getting the Gmail IMAP access settings
+/// (`users.settings.getImap`).
+pub struct GmailGetImap {
     send: GmailSend<GmailImapSettings>,
 }
 
-impl GmailImapGet {
+impl GmailGetImap {
+    /// Builds the `users.settings.getImap` request for the given user.
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail imap settings retrieval");
         trace!("user_id: {user_id:?}");
@@ -33,7 +36,7 @@ impl GmailImapGet {
     }
 }
 
-impl GmailCoroutine for GmailImapGet {
+impl GmailCoroutine for GmailGetImap {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailImapSettings>, GmailSendError>;
 

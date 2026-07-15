@@ -15,11 +15,15 @@ use crate::{
     v1::send::{GMAIL_API_BASE, GmailNoResponse, GmailSend, GmailSendError, GmailSendOutput},
 };
 
-pub struct GmailForwardingAddressDelete {
+/// I/O-free coroutine deleting a forwarding address from a Gmail
+/// account (`users.settings.forwardingAddresses.delete`).
+pub struct GmailDeleteForwardingAddress {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailForwardingAddressDelete {
+impl GmailDeleteForwardingAddress {
+    /// Builds the `users.settings.forwardingAddresses.delete` request for
+    /// the given forwarding email.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -37,7 +41,7 @@ impl GmailForwardingAddressDelete {
     }
 }
 
-impl GmailCoroutine for GmailForwardingAddressDelete {
+impl GmailCoroutine for GmailDeleteForwardingAddress {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 

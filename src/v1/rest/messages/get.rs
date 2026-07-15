@@ -17,11 +17,15 @@ use crate::{
 };
 
 /// Gmail REST message retrieval, wrapping a `GmailMessage` response.
-pub struct GmailMessageGet {
+pub struct GmailGetMessage {
     send: GmailSend<GmailMessage>,
 }
 
-impl GmailMessageGet {
+impl GmailGetMessage {
+    /// Builds the `users.messages.get` request for the given message id.
+    ///
+    /// `metadata_headers` filters the returned headers, and only
+    /// applies when the format is [`GmailMessageFormat::Metadata`].
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -52,7 +56,7 @@ impl GmailMessageGet {
     }
 }
 
-impl GmailCoroutine for GmailMessageGet {
+impl GmailCoroutine for GmailGetMessage {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailMessage>, GmailSendError>;
 

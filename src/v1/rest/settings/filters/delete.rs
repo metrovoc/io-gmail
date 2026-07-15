@@ -14,11 +14,15 @@ use crate::{
     v1::send::{GMAIL_API_BASE, GmailNoResponse, GmailSend, GmailSendError, GmailSendOutput},
 };
 
-pub struct GmailFilterDelete {
+/// I/O-free coroutine deleting a filter from a Gmail account
+/// (`users.settings.filters.delete`).
+pub struct GmailDeleteFilter {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailFilterDelete {
+impl GmailDeleteFilter {
+    /// Builds the `users.settings.filters.delete` request for the given
+    /// filter id.
     pub fn new(auth: &HttpAuthBearer, user_id: &str, id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail filter deletion");
         trace!("id: {id:?}");
@@ -31,7 +35,7 @@ impl GmailFilterDelete {
     }
 }
 
-impl GmailCoroutine for GmailFilterDelete {
+impl GmailCoroutine for GmailDeleteFilter {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 

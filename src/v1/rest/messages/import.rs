@@ -17,11 +17,15 @@ use crate::{
 };
 
 /// Gmail REST message import, wrapping the imported `GmailMessage`.
-pub struct GmailMessageImport {
+pub struct GmailImportMessage {
     send: GmailSend<GmailMessage>,
 }
 
-impl GmailMessageImport {
+impl GmailImportMessage {
+    /// Builds the `users.messages.import` request for the given message.
+    ///
+    /// `deleted` marks the message as permanently deleted (not
+    /// trashed), visible only in Google Vault.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -66,7 +70,7 @@ impl GmailMessageImport {
     }
 }
 
-impl GmailCoroutine for GmailMessageImport {
+impl GmailCoroutine for GmailImportMessage {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailMessage>, GmailSendError>;
 

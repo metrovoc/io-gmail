@@ -17,11 +17,14 @@ use crate::{
     },
 };
 
-pub struct GmailSendAsCreate {
+/// I/O-free coroutine creating a send-as alias on a Gmail account
+/// (`users.settings.sendAs.create`).
+pub struct GmailCreateSendAs {
     send: GmailSend<GmailSendAs>,
 }
 
-impl GmailSendAsCreate {
+impl GmailCreateSendAs {
+    /// Builds the `users.settings.sendAs.create` request for the given alias.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -37,7 +40,7 @@ impl GmailSendAsCreate {
     }
 }
 
-impl GmailCoroutine for GmailSendAsCreate {
+impl GmailCoroutine for GmailCreateSendAs {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailSendAs>, GmailSendError>;
 

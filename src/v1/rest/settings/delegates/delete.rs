@@ -14,11 +14,15 @@ use crate::{
     v1::send::{GMAIL_API_BASE, GmailNoResponse, GmailSend, GmailSendError, GmailSendOutput},
 };
 
-pub struct GmailDelegateDelete {
+/// I/O-free coroutine deleting a delegate from a Gmail account
+/// (`users.settings.delegates.delete`).
+pub struct GmailDeleteDelegate {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailDelegateDelete {
+impl GmailDeleteDelegate {
+    /// Builds the `users.settings.delegates.delete` request for the given
+    /// delegate email.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -36,7 +40,7 @@ impl GmailDelegateDelete {
     }
 }
 
-impl GmailCoroutine for GmailDelegateDelete {
+impl GmailCoroutine for GmailDeleteDelegate {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 

@@ -17,11 +17,14 @@ use crate::{
     },
 };
 
-pub struct GmailProfileGet {
+/// I/O-free coroutine getting the Gmail user profile (`users.getProfile`).
+pub struct GmailGetProfile {
     send: GmailSend<GmailProfile>,
 }
 
-impl GmailProfileGet {
+impl GmailGetProfile {
+    /// Builds the `users.getProfile` request for the given user id
+    /// (the mailbox owner, usually `me`).
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail profile retrieval");
         trace!("user_id: {user_id:?}");
@@ -33,7 +36,7 @@ impl GmailProfileGet {
     }
 }
 
-impl GmailCoroutine for GmailProfileGet {
+impl GmailCoroutine for GmailGetProfile {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailProfile>, GmailSendError>;
 

@@ -17,11 +17,13 @@ use crate::{
     },
 };
 
-pub struct GmailLabelGet {
+/// I/O-free coroutine getting a Gmail label by id (`users.labels.get`).
+pub struct GmailGetLabel {
     send: GmailSend<GmailLabel>,
 }
 
-impl GmailLabelGet {
+impl GmailGetLabel {
+    /// Builds the `users.labels.get` request for the given label id.
     pub fn new(auth: &HttpAuthBearer, user_id: &str, id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail label retrieval");
         trace!("id: {id:?}");
@@ -33,7 +35,7 @@ impl GmailLabelGet {
     }
 }
 
-impl GmailCoroutine for GmailLabelGet {
+impl GmailCoroutine for GmailGetLabel {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailLabel>, GmailSendError>;
 

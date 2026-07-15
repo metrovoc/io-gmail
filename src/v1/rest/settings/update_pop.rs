@@ -17,11 +17,15 @@ use crate::{
     },
 };
 
-pub struct GmailPopUpdate {
+/// I/O-free coroutine updating the Gmail POP access settings
+/// (`users.settings.updatePop`).
+pub struct GmailUpdatePop {
     send: GmailSend<GmailPopSettings>,
 }
 
-impl GmailPopUpdate {
+impl GmailUpdatePop {
+    /// Builds the `users.settings.updatePop` request wrapping the given
+    /// settings.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -37,7 +41,7 @@ impl GmailPopUpdate {
     }
 }
 
-impl GmailCoroutine for GmailPopUpdate {
+impl GmailCoroutine for GmailUpdatePop {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailPopSettings>, GmailSendError>;
 

@@ -21,16 +21,20 @@ use crate::{
 /// Response wrapping the send-as aliases of a Gmail account.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailSendAsListResponse {
+pub struct GmailListSendAsResponse {
+    /// Send-as aliases of the Gmail account.
     #[serde(default)]
     pub send_as: Vec<GmailSendAs>,
 }
 
-pub struct GmailSendAsList {
-    send: GmailSend<GmailSendAsListResponse>,
+/// I/O-free coroutine listing the send-as aliases of a Gmail account
+/// (`users.settings.sendAs.list`).
+pub struct GmailListSendAs {
+    send: GmailSend<GmailListSendAsResponse>,
 }
 
-impl GmailSendAsList {
+impl GmailListSendAs {
+    /// Builds the `users.settings.sendAs.list` request for the given user.
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail send-as aliases listing");
         trace!("user_id: {user_id:?}");
@@ -42,9 +46,9 @@ impl GmailSendAsList {
     }
 }
 
-impl GmailCoroutine for GmailSendAsList {
+impl GmailCoroutine for GmailListSendAs {
     type Yield = GmailYield;
-    type Return = Result<GmailSendOutput<GmailSendAsListResponse>, GmailSendError>;
+    type Return = Result<GmailSendOutput<GmailListSendAsResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);

@@ -1,6 +1,6 @@
 [package]
 name = "io-gmail"
-description = "Gmail REST API client library"
+description = "Gmail REST API client library for Rust"
 version = "0.0.1"
 authors = ["metrovoc", "soywod <pimalaya.org@posteo.net>"]
 rust-version = "1.87"
@@ -8,6 +8,8 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 categories = ["api-bindings", "email"]
 keywords = ["io-free", "coroutine", "gmail", "email", "rest"]
+homepage = "https://pimalaya.org"
+documentation = "https://docs.rs/io-gmail/latest/io_gmail"
 repository = "https://github.com/pimalaya/io-gmail"
 
 [package.metadata.docs.rs]

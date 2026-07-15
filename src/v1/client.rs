@@ -1,6 +1,7 @@
-//! Std-blocking Gmail client: wraps a `Read + Write` stream plus the
-//! bearer credential and runs the coroutines against
-//! `gmail.googleapis.com`. Gated behind the `client` feature.
+//! Std-blocking Gmail client, gated behind the `client` feature.
+//!
+//! Wraps a `Read + Write` stream plus the bearer credential and runs
+//! the coroutines against `gmail.googleapis.com`.
 
 #[cfg(any(
     feature = "rustls-aws",
@@ -10,29 +11,19 @@
 use core::time::Duration;
 use core::{any::Any, fmt};
 
-#[cfg(any(
-    feature = "rustls-aws",
-    feature = "rustls-ring",
-    feature = "native-tls"
-))]
-use alloc::string::ToString;
-use alloc::{boxed::Box, string::String};
-use io_http::rfc6750::bearer::HttpAuthBearer;
-
+use alloc::{
+    boxed::Box,
+    string::{String, ToString},
+};
 use std::io::{self, Read, Write};
 
+use io_http::rfc6750::bearer::HttpAuthBearer;
 #[cfg(any(
     feature = "rustls-aws",
     feature = "rustls-ring",
     feature = "native-tls"
 ))]
-use pimalaya_stream::std::stream::StreamStd;
-#[cfg(any(
-    feature = "rustls-aws",
-    feature = "rustls-ring",
-    feature = "native-tls"
-))]
-pub use pimalaya_stream::tls::*;
+use pimalaya_stream::{std::stream::StreamStd, tls::Tls};
 use thiserror::Error;
 #[cfg(any(
     feature = "rustls-aws",
@@ -50,23 +41,24 @@ use crate::v1::send::GMAIL_API_BASE;
 use crate::{
     coroutine::*,
     v1::rest::labels::{
-        GmailLabel, GmailLabelsListResponse, create::GmailLabelCreate, delete::GmailLabelDelete,
-        get::GmailLabelGet, list::GmailLabelsList, patch::GmailLabelPatch,
-        update::GmailLabelUpdate,
+        GmailLabel, GmailListLabelsResponse, create::GmailCreateLabel, delete::GmailDeleteLabel,
+        get::GmailGetLabel, list::GmailListLabels, patch::GmailPatchLabel,
+        update::GmailUpdateLabel,
     },
     v1::rest::messages::{
-        GmailMessage, GmailMessageFormat, GmailMessageId, delete::GmailMessageDelete,
-        get::GmailMessageGet, list::GmailMessagesList, list::GmailMessagesListParams,
-        list::GmailMessagesListResponse, modify::GmailMessageModify, send::GmailMessageSend,
-        trash::GmailMessageTrash, untrash::GmailMessageUntrash,
+        GmailMessage, GmailMessageFormat, GmailMessageId, delete::GmailDeleteMessage,
+        get::GmailGetMessage, list::GmailListMessages, list::GmailListMessagesParams,
+        list::GmailListMessagesResponse, modify::GmailModifyMessage, send::GmailSendMessage,
+        trash::GmailTrashMessage, untrash::GmailUntrashMessage,
     },
     v1::rest::users::{
-        GmailProfile, GmailWatchRequest, GmailWatchResponse, get_profile::GmailProfileGet,
+        GmailProfile, GmailWatchRequest, GmailWatchResponse, get_profile::GmailGetProfile,
         stop::GmailStop, watch::GmailWatch,
     },
     v1::send::{GmailNoResponse, GmailSendError, GmailSendOutput},
 };
 
+/// Errors that can occur on the std client.
 #[derive(Debug, Error)]
 pub enum GmailClientStdError {
     #[error(transparent)]
@@ -94,19 +86,21 @@ pub enum GmailClientStdError {
         feature = "rustls-ring",
         feature = "native-tls"
     ))]
-    #[error("Gmail URL `{0}` has unsupported scheme `{1}` (expected `http` or `https`)")]
-    UrlUnsupportedScheme(String, String),
+    #[error("Gmail URL `{url}` has unsupported scheme `{scheme}` (expected `http` or `https`)")]
+    UrlUnsupportedScheme { url: String, scheme: String },
 }
 
 /// Optional settings for [`GmailClientStd::connect`]; every field has a
 /// default (the TLS backend default, and `me` as the mailbox owner).
 pub struct GmailClientStdConnectOptions {
+    /// TLS backend configuration.
     #[cfg(any(
         feature = "rustls-aws",
         feature = "rustls-ring",
         feature = "native-tls"
     ))]
     pub tls: Tls,
+    /// Owner of the mailbox the requests target (`me` by default).
     pub user_id: String,
 }
 
@@ -126,13 +120,23 @@ impl Default for GmailClientStdConnectOptions {
 
 const READ_BUFFER_SIZE: usize = 16 * 1024;
 
+/// Standard, blocking Gmail client.
+///
+/// Owns the stream, the bearer credential and the mailbox owner; each
+/// convenience method builds the matching coroutine and runs it to
+/// completion. Coroutines without a convenience method go through
+/// [`GmailClientStd::run`].
 pub struct GmailClientStd {
+    /// The underlying TCP or TLS stream.
     pub stream: Box<dyn GmailStream>,
+    /// The OAuth 2.0 bearer credential added to every request.
     pub auth: HttpAuthBearer,
+    /// Owner of the mailbox the requests target (usually `me`).
     pub user_id: String,
 }
 
 impl GmailClientStd {
+    /// Builds a client over an already-connected stream.
     pub fn new<S: Read + Write + Send + 'static>(
         stream: S,
         token: impl ToString,
@@ -145,6 +149,8 @@ impl GmailClientStd {
         }
     }
 
+    /// Opens a TCP/TLS connection to `gmail.googleapis.com` and builds
+    /// the client around it.
     #[cfg(any(
         feature = "rustls-aws",
         feature = "rustls-ring",
@@ -165,10 +171,10 @@ impl GmailClientStd {
             "http" => StreamStd::connect_tcp(host, url.port().unwrap_or(80))?,
             "https" => StreamStd::connect_tls(host, url.port().unwrap_or(443), &tls)?,
             scheme => {
-                return Err(GmailClientStdError::UrlUnsupportedScheme(
-                    url.to_string(),
-                    scheme.to_string(),
-                ));
+                return Err(GmailClientStdError::UrlUnsupportedScheme {
+                    url: url.to_string(),
+                    scheme: scheme.to_string(),
+                });
             }
         };
 
@@ -181,10 +187,13 @@ impl GmailClientStd {
         })
     }
 
+    /// Replaces the underlying stream, e.g. after reconnecting.
     pub fn set_stream<S: Read + Write + Send + 'static>(&mut self, stream: S) {
         self.stream = Box::new(stream);
     }
 
+    /// Runs the given coroutine to completion against the stream,
+    /// reading on `WantsRead` and writing on `WantsWrite`.
     pub fn run<C, T>(&mut self, mut coroutine: C) -> Result<GmailSendOutput<T>, GmailClientStdError>
     where
         C: GmailCoroutine<Yield = GmailYield, Return = Result<GmailSendOutput<T>, GmailSendError>>,
@@ -208,11 +217,13 @@ impl GmailClientStd {
         }
     }
 
-    pub fn profile_get(&mut self) -> Result<GmailSendOutput<GmailProfile>, GmailClientStdError> {
-        let coroutine = GmailProfileGet::new(&self.auth, &self.user_id)?;
+    /// Gets the profile of the mailbox (`users.getProfile`).
+    pub fn get_profile(&mut self) -> Result<GmailSendOutput<GmailProfile>, GmailClientStdError> {
+        let coroutine = GmailGetProfile::new(&self.auth, &self.user_id)?;
         self.run(coroutine)
     }
 
+    /// Sets up Pub/Sub push notifications (`users.watch`).
     pub fn watch(
         &mut self,
         request: &GmailWatchRequest,
@@ -221,92 +232,103 @@ impl GmailClientStd {
         self.run(coroutine)
     }
 
+    /// Stops Pub/Sub push notifications (`users.stop`).
     pub fn stop(&mut self) -> Result<GmailSendOutput<GmailNoResponse>, GmailClientStdError> {
         let coroutine = GmailStop::new(&self.auth, &self.user_id)?;
         self.run(coroutine)
     }
 
-    pub fn labels_list(
+    /// Lists the labels of the mailbox (`users.labels.list`).
+    pub fn list_labels(
         &mut self,
-    ) -> Result<GmailSendOutput<GmailLabelsListResponse>, GmailClientStdError> {
-        let coroutine = GmailLabelsList::new(&self.auth, &self.user_id)?;
+    ) -> Result<GmailSendOutput<GmailListLabelsResponse>, GmailClientStdError> {
+        let coroutine = GmailListLabels::new(&self.auth, &self.user_id)?;
         self.run(coroutine)
     }
 
-    pub fn label_get(
+    /// Gets a label by id (`users.labels.get`).
+    pub fn get_label(
         &mut self,
         id: &str,
     ) -> Result<GmailSendOutput<GmailLabel>, GmailClientStdError> {
-        let coroutine = GmailLabelGet::new(&self.auth, &self.user_id, id)?;
+        let coroutine = GmailGetLabel::new(&self.auth, &self.user_id, id)?;
         self.run(coroutine)
     }
 
-    pub fn label_create(
+    /// Creates the given label (`users.labels.create`).
+    pub fn create_label(
         &mut self,
         label: &GmailLabel,
     ) -> Result<GmailSendOutput<GmailLabel>, GmailClientStdError> {
-        let coroutine = GmailLabelCreate::new(&self.auth, &self.user_id, label)?;
+        let coroutine = GmailCreateLabel::new(&self.auth, &self.user_id, label)?;
         self.run(coroutine)
     }
 
-    pub fn label_update(
+    /// Updates the given label in place (`users.labels.update`).
+    pub fn update_label(
         &mut self,
         label: &GmailLabel,
     ) -> Result<GmailSendOutput<GmailLabel>, GmailClientStdError> {
-        let coroutine = GmailLabelUpdate::new(&self.auth, &self.user_id, label)?;
+        let coroutine = GmailUpdateLabel::new(&self.auth, &self.user_id, label)?;
         self.run(coroutine)
     }
 
-    pub fn label_patch(
+    /// Patches the given label (`users.labels.patch`).
+    pub fn patch_label(
         &mut self,
         label: &GmailLabel,
     ) -> Result<GmailSendOutput<GmailLabel>, GmailClientStdError> {
-        let coroutine = GmailLabelPatch::new(&self.auth, &self.user_id, label)?;
+        let coroutine = GmailPatchLabel::new(&self.auth, &self.user_id, label)?;
         self.run(coroutine)
     }
 
-    pub fn label_delete(
+    /// Deletes a label by id (`users.labels.delete`).
+    pub fn delete_label(
         &mut self,
         id: &str,
     ) -> Result<GmailSendOutput<GmailNoResponse>, GmailClientStdError> {
-        let coroutine = GmailLabelDelete::new(&self.auth, &self.user_id, id)?;
+        let coroutine = GmailDeleteLabel::new(&self.auth, &self.user_id, id)?;
         self.run(coroutine)
     }
 
-    pub fn messages_list(
+    /// Lists message ids matching the params (`users.messages.list`).
+    pub fn list_messages(
         &mut self,
-        params: &GmailMessagesListParams,
-    ) -> Result<GmailSendOutput<GmailMessagesListResponse>, GmailClientStdError> {
-        let coroutine = GmailMessagesList::new(&self.auth, &self.user_id, params)?;
+        params: &GmailListMessagesParams,
+    ) -> Result<GmailSendOutput<GmailListMessagesResponse>, GmailClientStdError> {
+        let coroutine = GmailListMessages::new(&self.auth, &self.user_id, params)?;
         self.run(coroutine)
     }
 
-    pub fn message_get(
+    /// Gets a message by id (`users.messages.get`).
+    pub fn get_message(
         &mut self,
         id: &str,
         format: GmailMessageFormat,
         metadata_headers: &[&str],
     ) -> Result<GmailSendOutput<GmailMessage>, GmailClientStdError> {
         let coroutine =
-            GmailMessageGet::new(&self.auth, &self.user_id, id, format, metadata_headers)?;
+            GmailGetMessage::new(&self.auth, &self.user_id, id, format, metadata_headers)?;
         self.run(coroutine)
     }
 
-    pub fn message_send(
+    /// Sends the given message (`users.messages.send`).
+    pub fn send_message(
         &mut self,
         message: &GmailMessage,
     ) -> Result<GmailSendOutput<GmailMessageId>, GmailClientStdError> {
-        let coroutine = GmailMessageSend::new(&self.auth, &self.user_id, message)?;
+        let coroutine = GmailSendMessage::new(&self.auth, &self.user_id, message)?;
         self.run(coroutine)
     }
 
-    pub fn message_modify(
+    /// Adds and removes labels on a message (`users.messages.modify`).
+    pub fn modify_message(
         &mut self,
         id: &str,
         add_label_ids: &[String],
         remove_label_ids: &[String],
     ) -> Result<GmailSendOutput<GmailMessage>, GmailClientStdError> {
-        let coroutine = GmailMessageModify::new(
+        let coroutine = GmailModifyMessage::new(
             &self.auth,
             &self.user_id,
             id,
@@ -316,27 +338,30 @@ impl GmailClientStd {
         self.run(coroutine)
     }
 
-    pub fn message_trash(
+    /// Moves a message to the trash (`users.messages.trash`).
+    pub fn trash_message(
         &mut self,
         id: &str,
     ) -> Result<GmailSendOutput<GmailMessage>, GmailClientStdError> {
-        let coroutine = GmailMessageTrash::new(&self.auth, &self.user_id, id)?;
+        let coroutine = GmailTrashMessage::new(&self.auth, &self.user_id, id)?;
         self.run(coroutine)
     }
 
-    pub fn message_untrash(
+    /// Restores a message from the trash (`users.messages.untrash`).
+    pub fn untrash_message(
         &mut self,
         id: &str,
     ) -> Result<GmailSendOutput<GmailMessage>, GmailClientStdError> {
-        let coroutine = GmailMessageUntrash::new(&self.auth, &self.user_id, id)?;
+        let coroutine = GmailUntrashMessage::new(&self.auth, &self.user_id, id)?;
         self.run(coroutine)
     }
 
-    pub fn message_delete(
+    /// Permanently deletes a message (`users.messages.delete`).
+    pub fn delete_message(
         &mut self,
         id: &str,
     ) -> Result<GmailSendOutput<GmailNoResponse>, GmailClientStdError> {
-        let coroutine = GmailMessageDelete::new(&self.auth, &self.user_id, id)?;
+        let coroutine = GmailDeleteMessage::new(&self.auth, &self.user_id, id)?;
         self.run(coroutine)
     }
 }
@@ -350,7 +375,10 @@ impl fmt::Debug for GmailClientStd {
     }
 }
 
+/// Boxable client stream: `Read + Write + Send` plus `Any` so callers
+/// can downcast back to the concrete stream type.
 pub trait GmailStream: Read + Write + Send + Any {
+    /// Returns the stream as a mutable `Any` for downcasting.
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 

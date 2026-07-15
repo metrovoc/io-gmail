@@ -24,11 +24,15 @@ struct GmailThreadModifyRequest<'a> {
 }
 
 /// Gmail REST thread label modification, wrapping the updated `GmailThread`.
-pub struct GmailThreadModify {
+pub struct GmailModifyThread {
     send: GmailSend<GmailThread>,
 }
 
-impl GmailThreadModify {
+impl GmailModifyThread {
+    /// Builds the `users.threads.modify` request from the given label ids.
+    ///
+    /// Fails with [`GmailSendError::InvalidRequest`] when both label id
+    /// lists are empty.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -58,7 +62,7 @@ impl GmailThreadModify {
     }
 }
 
-impl GmailCoroutine for GmailThreadModify {
+impl GmailCoroutine for GmailModifyThread {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailThread>, GmailSendError>;
 

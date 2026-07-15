@@ -18,11 +18,16 @@ use crate::{
 };
 
 /// Gmail REST thread retrieval, wrapping a `GmailThread` response.
-pub struct GmailThreadGet {
+pub struct GmailGetThread {
     send: GmailSend<GmailThread>,
 }
 
-impl GmailThreadGet {
+impl GmailGetThread {
+    /// Builds the `users.threads.get` request for the given thread id
+    /// and message format.
+    ///
+    /// The metadata headers only apply when the format is
+    /// [`GmailMessageFormat::Metadata`].
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -52,7 +57,7 @@ impl GmailThreadGet {
     }
 }
 
-impl GmailCoroutine for GmailThreadGet {
+impl GmailCoroutine for GmailGetThread {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailThread>, GmailSendError>;
 

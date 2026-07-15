@@ -17,11 +17,15 @@ use crate::{
     },
 };
 
-pub struct GmailForwardingAddressGet {
+/// I/O-free coroutine getting a forwarding address of a Gmail account
+/// (`users.settings.forwardingAddresses.get`).
+pub struct GmailGetForwardingAddress {
     send: GmailSend<GmailForwardingAddress>,
 }
 
-impl GmailForwardingAddressGet {
+impl GmailGetForwardingAddress {
+    /// Builds the `users.settings.forwardingAddresses.get` request for
+    /// the given forwarding email.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -39,7 +43,7 @@ impl GmailForwardingAddressGet {
     }
 }
 
-impl GmailCoroutine for GmailForwardingAddressGet {
+impl GmailCoroutine for GmailGetForwardingAddress {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailForwardingAddress>, GmailSendError>;
 

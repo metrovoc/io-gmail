@@ -21,16 +21,20 @@ use crate::{
 /// Response wrapping the filters of a Gmail account.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailFiltersListResponse {
+pub struct GmailListFiltersResponse {
+    /// Filters of the Gmail account.
     #[serde(default)]
     pub filter: Vec<GmailFilter>,
 }
 
-pub struct GmailFiltersList {
-    send: GmailSend<GmailFiltersListResponse>,
+/// I/O-free coroutine listing the filters of a Gmail account
+/// (`users.settings.filters.list`).
+pub struct GmailListFilters {
+    send: GmailSend<GmailListFiltersResponse>,
 }
 
-impl GmailFiltersList {
+impl GmailListFilters {
+    /// Builds the `users.settings.filters.list` request for the given user.
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail filters listing");
         trace!("user_id: {user_id:?}");
@@ -42,9 +46,9 @@ impl GmailFiltersList {
     }
 }
 
-impl GmailCoroutine for GmailFiltersList {
+impl GmailCoroutine for GmailListFilters {
     type Yield = GmailYield;
-    type Return = Result<GmailSendOutput<GmailFiltersListResponse>, GmailSendError>;
+    type Return = Result<GmailSendOutput<GmailListFiltersResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);

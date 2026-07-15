@@ -16,11 +16,13 @@ use crate::{
 };
 
 /// Gmail REST attachment retrieval, wrapping a `GmailMessagePartBody`.
-pub struct GmailAttachmentGet {
+pub struct GmailGetAttachment {
     send: GmailSend<GmailMessagePartBody>,
 }
 
-impl GmailAttachmentGet {
+impl GmailGetAttachment {
+    /// Builds the `users.messages.attachments.get` request for the
+    /// given message and attachment ids.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -40,7 +42,7 @@ impl GmailAttachmentGet {
     }
 }
 
-impl GmailCoroutine for GmailAttachmentGet {
+impl GmailCoroutine for GmailGetAttachment {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailMessagePartBody>, GmailSendError>;
 

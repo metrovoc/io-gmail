@@ -17,11 +17,15 @@ use crate::{
     },
 };
 
-pub struct GmailLanguageUpdate {
+/// I/O-free coroutine updating the Gmail display language settings
+/// (`users.settings.updateLanguage`).
+pub struct GmailUpdateLanguage {
     send: GmailSend<GmailLanguageSettings>,
 }
 
-impl GmailLanguageUpdate {
+impl GmailUpdateLanguage {
+    /// Builds the `users.settings.updateLanguage` request wrapping the given
+    /// settings.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -38,7 +42,7 @@ impl GmailLanguageUpdate {
     }
 }
 
-impl GmailCoroutine for GmailLanguageUpdate {
+impl GmailCoroutine for GmailUpdateLanguage {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailLanguageSettings>, GmailSendError>;
 

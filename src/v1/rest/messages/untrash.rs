@@ -16,11 +16,13 @@ use crate::{
 };
 
 /// Gmail REST message untrashing, wrapping the updated `GmailMessage`.
-pub struct GmailMessageUntrash {
+pub struct GmailUntrashMessage {
     send: GmailSend<GmailMessage>,
 }
 
-impl GmailMessageUntrash {
+impl GmailUntrashMessage {
+    /// Builds the `users.messages.untrash` request for the given
+    /// message id.
     pub fn new(auth: &HttpAuthBearer, user_id: &str, id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail message untrashing");
         trace!("id: {id:?}");
@@ -33,7 +35,7 @@ impl GmailMessageUntrash {
     }
 }
 
-impl GmailCoroutine for GmailMessageUntrash {
+impl GmailCoroutine for GmailUntrashMessage {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailMessage>, GmailSendError>;
 

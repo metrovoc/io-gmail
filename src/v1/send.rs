@@ -1,6 +1,7 @@
-//! HTTP/JSON transport every Gmail coroutine delegates to: builds the
-//! authorized request and parses the JSON response, or the Gmail error
-//! envelope on failure.
+//! HTTP/JSON transport every Gmail coroutine delegates to.
+//!
+//! Builds the authorized request and parses the JSON response, or the
+//! Gmail error envelope on failure.
 //!
 //! Gmail API reference: <https://developers.google.com/gmail/api/reference/rest>.
 
@@ -12,7 +13,7 @@ use alloc::{
 };
 
 use io_http::{
-    coroutine::{HttpCoroutine, HttpCoroutineState},
+    coroutine::*,
     rfc6750::bearer::HttpAuthBearer,
     rfc9110::{
         request::HttpRequest,
@@ -25,11 +26,13 @@ use serde::{Deserialize, Deserializer, Serialize, de::DeserializeOwned};
 use thiserror::Error;
 use url::Url;
 
-use crate::coroutine::{GmailCoroutine, GmailCoroutineState, GmailYield};
+use crate::coroutine::*;
 
+/// Base URL of the Gmail REST API v1.
 pub const GMAIL_API_BASE: &str = "https://gmail.googleapis.com/gmail/v1/";
-pub const GMAIL_UPLOAD_BASE: &str = "https://gmail.googleapis.com/upload/gmail/v1/";
 
+/// Unit marker deserialized from empty 2xx bodies (DELETE, batch
+/// operations, stop).
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq)]
 pub struct GmailNoResponse;
 
@@ -43,6 +46,7 @@ impl<'de> Deserialize<'de> for GmailNoResponse {
     }
 }
 
+/// Errors that can occur during a Gmail exchange.
 #[derive(Debug, Error)]
 pub enum GmailSendError {
     #[error("Gmail HTTP request failed: {0}")]
@@ -62,6 +66,7 @@ pub enum GmailSendError {
 }
 
 impl GmailSendError {
+    /// Returns the HTTP status code when the error is an API error.
     pub fn status(&self) -> Option<u16> {
         match self {
             Self::Api { status, .. } => Some(*status),
@@ -69,31 +74,40 @@ impl GmailSendError {
         }
     }
 
+    /// Whether the error is transient (429 or 5xx) and worth retrying.
     pub fn is_retryable(&self) -> bool {
         matches!(self.status(), Some(429 | 500 | 502 | 503 | 504))
     }
 }
 
+/// Terminal value of a successful Gmail exchange.
 #[derive(Clone, Debug)]
 pub struct GmailSendOutput<T> {
+    /// The parsed 2xx response body.
     pub response: T,
+    /// Whether the server allows reusing the TCP/TLS connection.
     pub keep_alive: bool,
 }
 
+/// I/O-free coroutine sending one authorized HTTP request and parsing
+/// the JSON response into `T`.
 pub struct GmailSend<T> {
     state: State,
     _phantom: PhantomData<T>,
 }
 
 impl<T: DeserializeOwned> GmailSend<T> {
+    /// Builds a GET request against the given URL.
     pub fn get(auth: &HttpAuthBearer, url: Url) -> Self {
         Self::with_method(auth, "GET", url, None, Vec::new())
     }
 
+    /// Builds a DELETE request against the given URL.
     pub fn delete(auth: &HttpAuthBearer, url: Url) -> Self {
         Self::with_method(auth, "DELETE", url, None, Vec::new())
     }
 
+    /// Builds a POST request with the given value as JSON body.
     pub fn post_json<B: Serialize>(
         auth: &HttpAuthBearer,
         url: Url,
@@ -109,6 +123,7 @@ impl<T: DeserializeOwned> GmailSend<T> {
         ))
     }
 
+    /// Builds a PUT request with the given value as JSON body.
     pub fn put_json<B: Serialize>(
         auth: &HttpAuthBearer,
         url: Url,
@@ -124,6 +139,7 @@ impl<T: DeserializeOwned> GmailSend<T> {
         ))
     }
 
+    /// Builds a PATCH request with the given value as JSON body.
     pub fn patch_json<B: Serialize>(
         auth: &HttpAuthBearer,
         url: Url,
@@ -139,6 +155,7 @@ impl<T: DeserializeOwned> GmailSend<T> {
         ))
     }
 
+    /// Builds a request with an arbitrary method, content type and body.
     pub fn with_method(
         auth: &HttpAuthBearer,
         method: &str,
@@ -243,6 +260,8 @@ struct ErrorBody {
     message: Option<String>,
 }
 
+/// Parses Gmail's JSON error envelope, falling back to the raw body;
+/// returns the effective status code and message.
 pub fn parse_api_error(http_status: u16, body: &[u8]) -> (u16, String) {
     if let Ok(envelope) = serde_json::from_slice::<ErrorEnvelope>(body) {
         let status = envelope.error.code.unwrap_or(http_status);

@@ -17,11 +17,14 @@ use crate::{
     },
 };
 
-pub struct GmailVacationGet {
+/// I/O-free coroutine getting the Gmail vacation responder settings
+/// (`users.settings.getVacation`).
+pub struct GmailGetVacation {
     send: GmailSend<GmailVacationSettings>,
 }
 
-impl GmailVacationGet {
+impl GmailGetVacation {
+    /// Builds the `users.settings.getVacation` request for the given user.
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail vacation settings retrieval");
         trace!("user_id: {user_id:?}");
@@ -34,7 +37,7 @@ impl GmailVacationGet {
     }
 }
 
-impl GmailCoroutine for GmailVacationGet {
+impl GmailCoroutine for GmailGetVacation {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailVacationSettings>, GmailSendError>;
 

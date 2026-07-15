@@ -1,6 +1,8 @@
-//! Infinite polling watch coroutine: baseline via `users.getProfile`,
-//! then poll `users.history.list` on a timer (yielding `WantsSleep`) and
-//! emit one raw `GmailHistoryDiff` per tick.
+//! Infinite polling watch coroutine built on the history API.
+//!
+//! Baselines the history cursor via `users.getProfile`, then polls
+//! `users.history.list` on a timer (yielding `WantsSleep`) and emits
+//! one raw `GmailHistoryDiff` per tick.
 //!
 //! Gmail sync guide: <https://developers.google.com/gmail/api/guides/sync>
 
@@ -9,46 +11,64 @@ use core::{convert::Infallible, fmt, mem, time::Duration};
 use alloc::{string::String, vec::Vec};
 
 use io_http::rfc6750::bearer::HttpAuthBearer;
-use log::trace;
+use log::{debug, trace};
 use thiserror::Error;
 
 use crate::{
-    coroutine::{GmailCoroutine, GmailCoroutineState, GmailYield},
+    coroutine::*,
     v1::rest::history::{
         GmailHistoryLabel,
-        list::{GmailHistoryList, GmailHistoryListParams},
+        list::{GmailListHistory, GmailListHistoryParams},
     },
-    v1::rest::messages::{GmailMessage, GmailMessageFormat, GmailMessageId, get::GmailMessageGet},
-    v1::rest::users::get_profile::GmailProfileGet,
+    v1::rest::messages::{GmailMessage, GmailMessageFormat, GmailMessageId, get::GmailGetMessage},
+    v1::rest::users::get_profile::GmailGetProfile,
     v1::send::GmailSendError,
 };
 
 const POLL_SECONDS: u64 = 30;
 
+/// Errors that can occur during the watch.
 #[derive(Debug, Error)]
-pub enum GmailHistoryPollError {
+pub enum GmailPollHistoryError {
     #[error(transparent)]
     Send(#[from] GmailSendError),
 }
 
+/// One tick's worth of mailbox changes, Gmail-native.
+///
+/// Consumers translate it into their own change representation; io-gmail
+/// does not interpret it further.
 #[derive(Clone, Debug, Default)]
 pub struct GmailHistoryDiff {
+    /// The history cursor after this diff, to persist for resuming.
     pub history_id: String,
+    /// Messages added to the mailbox since the last tick.
     pub added: Vec<GmailMessage>,
+    /// Messages removed from the mailbox since the last tick.
     pub removed: Vec<GmailMessageId>,
+    /// Label additions on individual messages.
     pub labels_added: Vec<GmailHistoryLabel>,
+    /// Label removals on individual messages.
     pub labels_removed: Vec<GmailHistoryLabel>,
 }
 
+/// I/O request or event yielded by the watch.
 #[derive(Debug)]
-pub enum GmailHistoryPollYield {
+pub enum GmailPollHistoryYield {
     WantsRead,
     WantsWrite(Vec<u8>),
+    /// Asks the caller to sleep until the next poll.
     WantsSleep(Duration),
+    /// One tick's worth of changes; the watch then goes back to sleep.
     Diff(GmailHistoryDiff),
 }
 
-pub struct GmailHistoryPoll {
+/// I/O-free coroutine watching a mailbox by polling `users.history.list`.
+///
+/// Never completes successfully (its return type is `Infallible`): it
+/// yields one [`GmailHistoryDiff`] per tick and re-baselines itself when
+/// the server reports an expired history cursor.
+pub struct GmailPollHistory {
     state: State,
     auth: HttpAuthBearer,
     user_id: String,
@@ -56,14 +76,19 @@ pub struct GmailHistoryPoll {
     history_id: Option<String>,
 }
 
-impl GmailHistoryPoll {
+impl GmailPollHistory {
+    /// Builds the watch over the given mailbox label, baselining the
+    /// history cursor first.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
         mailbox: &str,
-    ) -> Result<Self, GmailHistoryPollError> {
-        trace!("prepare Gmail history poll");
-        let profile = GmailProfileGet::new(auth, user_id)?;
+    ) -> Result<Self, GmailPollHistoryError> {
+        debug!("prepare gmail poll history");
+        trace!("user_id: {user_id:?}");
+        trace!("mailbox: {mailbox:?}");
+
+        let profile = GmailGetProfile::new(auth, user_id)?;
         Ok(Self {
             state: State::Baseline(profile),
             auth: auth.clone(),
@@ -73,19 +98,19 @@ impl GmailHistoryPoll {
         })
     }
 
-    fn history_list(&self, page_token: Option<&str>) -> Result<GmailHistoryList, GmailSendError> {
-        let params = GmailHistoryListParams {
+    fn list_history(&self, page_token: Option<&str>) -> Result<GmailListHistory, GmailSendError> {
+        let params = GmailListHistoryParams {
             start_history_id: self.history_id.as_deref().unwrap_or_default(),
             label_id: Some(&self.mailbox),
             history_types: &[],
             max_results: None,
             page_token,
         };
-        GmailHistoryList::new(&self.auth, &self.user_id, &params)
+        GmailListHistory::new(&self.auth, &self.user_id, &params)
     }
 
-    fn message_get(&self, id: &str) -> Result<GmailMessageGet, GmailSendError> {
-        GmailMessageGet::new(
+    fn get_message(&self, id: &str) -> Result<GmailGetMessage, GmailSendError> {
+        GmailGetMessage::new(
             &self.auth,
             &self.user_id,
             id,
@@ -111,23 +136,23 @@ impl GmailHistoryPoll {
     }
 }
 
-impl GmailCoroutine for GmailHistoryPoll {
-    type Yield = GmailHistoryPollYield;
-    type Return = Result<Infallible, GmailHistoryPollError>;
+impl GmailCoroutine for GmailPollHistory {
+    type Yield = GmailPollHistoryYield;
+    type Return = Result<Infallible, GmailPollHistoryError>;
 
     fn resume(&mut self, bytes: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
-        trace!("history-poll: {}", self.state);
+        trace!("poll history: {}", self.state);
         let mut bytes = bytes;
         loop {
             match mem::replace(&mut self.state, State::Done) {
                 State::Baseline(mut profile) => match profile.resume(bytes.take()) {
                     GmailCoroutineState::Yielded(GmailYield::WantsRead) => {
                         self.state = State::Baseline(profile);
-                        return GmailCoroutineState::Yielded(GmailHistoryPollYield::WantsRead);
+                        return GmailCoroutineState::Yielded(GmailPollHistoryYield::WantsRead);
                     }
                     GmailCoroutineState::Yielded(GmailYield::WantsWrite(out)) => {
                         self.state = State::Baseline(profile);
-                        return GmailCoroutineState::Yielded(GmailHistoryPollYield::WantsWrite(
+                        return GmailCoroutineState::Yielded(GmailPollHistoryYield::WantsWrite(
                             out,
                         ));
                     }
@@ -140,7 +165,7 @@ impl GmailCoroutine for GmailHistoryPoll {
                     }
                 },
                 State::Sleeping => {
-                    let list = match self.history_list(None) {
+                    let list = match self.list_history(None) {
                         Ok(list) => list,
                         Err(err) => return GmailCoroutineState::Complete(Err(err.into())),
                     };
@@ -148,7 +173,7 @@ impl GmailCoroutine for GmailHistoryPoll {
                         list,
                         cycle: Cycle::default(),
                     };
-                    return GmailCoroutineState::Yielded(GmailHistoryPollYield::WantsSleep(
+                    return GmailCoroutineState::Yielded(GmailPollHistoryYield::WantsSleep(
                         Duration::from_secs(POLL_SECONDS),
                     ));
                 }
@@ -158,18 +183,18 @@ impl GmailCoroutine for GmailHistoryPoll {
                 } => match list.resume(bytes.take()) {
                     GmailCoroutineState::Yielded(GmailYield::WantsRead) => {
                         self.state = State::Listing { list, cycle };
-                        return GmailCoroutineState::Yielded(GmailHistoryPollYield::WantsRead);
+                        return GmailCoroutineState::Yielded(GmailPollHistoryYield::WantsRead);
                     }
                     GmailCoroutineState::Yielded(GmailYield::WantsWrite(out)) => {
                         self.state = State::Listing { list, cycle };
-                        return GmailCoroutineState::Yielded(GmailHistoryPollYield::WantsWrite(
+                        return GmailCoroutineState::Yielded(GmailPollHistoryYield::WantsWrite(
                             out,
                         ));
                     }
                     GmailCoroutineState::Complete(Err(err)) => {
                         if err.status() == Some(404) {
-                            trace!("gmail history cursor expired; re-baselining");
-                            let profile = match GmailProfileGet::new(&self.auth, &self.user_id) {
+                            debug!("gmail history cursor expired; re-baselining");
+                            let profile = match GmailGetProfile::new(&self.auth, &self.user_id) {
                                 Ok(profile) => profile,
                                 Err(err) => {
                                     return GmailCoroutineState::Complete(Err(err.into()));
@@ -203,7 +228,7 @@ impl GmailCoroutine for GmailHistoryPoll {
                         }
 
                         if let Some(token) = response.next_page_token {
-                            let list = match self.history_list(Some(&token)) {
+                            let list = match self.list_history(Some(&token)) {
                                 Ok(list) => list,
                                 Err(err) => {
                                     return GmailCoroutineState::Complete(Err(err.into()));
@@ -217,11 +242,11 @@ impl GmailCoroutine for GmailHistoryPoll {
 
                         if cycle.added_ids.is_empty() {
                             let diff = self.finalize(cycle);
-                            return GmailCoroutineState::Yielded(GmailHistoryPollYield::Diff(diff));
+                            return GmailCoroutineState::Yielded(GmailPollHistoryYield::Diff(diff));
                         }
 
                         let ids = mem::take(&mut cycle.added_ids);
-                        let current = match self.message_get(&ids[0]) {
+                        let current = match self.get_message(&ids[0]) {
                             Ok(get) => get,
                             Err(err) => return GmailCoroutineState::Complete(Err(err.into())),
                         };
@@ -246,7 +271,7 @@ impl GmailCoroutine for GmailHistoryPoll {
                             current,
                             cycle,
                         };
-                        return GmailCoroutineState::Yielded(GmailHistoryPollYield::WantsRead);
+                        return GmailCoroutineState::Yielded(GmailPollHistoryYield::WantsRead);
                     }
                     GmailCoroutineState::Yielded(GmailYield::WantsWrite(out)) => {
                         self.state = State::Fetching {
@@ -255,7 +280,7 @@ impl GmailCoroutine for GmailHistoryPoll {
                             current,
                             cycle,
                         };
-                        return GmailCoroutineState::Yielded(GmailHistoryPollYield::WantsWrite(
+                        return GmailCoroutineState::Yielded(GmailPollHistoryYield::WantsWrite(
                             out,
                         ));
                     }
@@ -270,7 +295,7 @@ impl GmailCoroutine for GmailHistoryPoll {
 
                         let index = index + 1;
                         if index < ids.len() {
-                            let current = match self.message_get(&ids[index]) {
+                            let current = match self.get_message(&ids[index]) {
                                 Ok(get) => get,
                                 Err(err) => {
                                     return GmailCoroutineState::Complete(Err(err.into()));
@@ -284,7 +309,7 @@ impl GmailCoroutine for GmailHistoryPoll {
                             };
                         } else {
                             let diff = self.finalize(cycle);
-                            return GmailCoroutineState::Yielded(GmailHistoryPollYield::Diff(diff));
+                            return GmailCoroutineState::Yielded(GmailPollHistoryYield::Diff(diff));
                         }
                     }
                 },
@@ -307,16 +332,16 @@ struct Cycle {
 }
 
 enum State {
-    Baseline(GmailProfileGet),
+    Baseline(GmailGetProfile),
     Sleeping,
     Listing {
-        list: GmailHistoryList,
+        list: GmailListHistory,
         cycle: Cycle,
     },
     Fetching {
         ids: Vec<String>,
         index: usize,
-        current: GmailMessageGet,
+        current: GmailGetMessage,
         cycle: Cycle,
     },
     Done,

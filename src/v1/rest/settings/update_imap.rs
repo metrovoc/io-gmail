@@ -17,11 +17,15 @@ use crate::{
     },
 };
 
-pub struct GmailImapUpdate {
+/// I/O-free coroutine updating the Gmail IMAP access settings
+/// (`users.settings.updateImap`).
+pub struct GmailUpdateImap {
     send: GmailSend<GmailImapSettings>,
 }
 
-impl GmailImapUpdate {
+impl GmailUpdateImap {
+    /// Builds the `users.settings.updateImap` request wrapping the given
+    /// settings.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -37,7 +41,7 @@ impl GmailImapUpdate {
     }
 }
 
-impl GmailCoroutine for GmailImapUpdate {
+impl GmailCoroutine for GmailUpdateImap {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailImapSettings>, GmailSendError>;
 

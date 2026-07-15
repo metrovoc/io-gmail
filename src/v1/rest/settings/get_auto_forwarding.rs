@@ -17,11 +17,15 @@ use crate::{
     },
 };
 
-pub struct GmailAutoForwardingGet {
+/// I/O-free coroutine getting the Gmail auto-forwarding settings
+/// (`users.settings.getAutoForwarding`).
+pub struct GmailGetAutoForwarding {
     send: GmailSend<GmailAutoForwarding>,
 }
 
-impl GmailAutoForwardingGet {
+impl GmailGetAutoForwarding {
+    /// Builds the `users.settings.getAutoForwarding` request for the given
+    /// user.
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail auto-forwarding settings retrieval");
         trace!("user_id: {user_id:?}");
@@ -34,7 +38,7 @@ impl GmailAutoForwardingGet {
     }
 }
 
-impl GmailCoroutine for GmailAutoForwardingGet {
+impl GmailCoroutine for GmailGetAutoForwarding {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailAutoForwarding>, GmailSendError>;
 

@@ -17,11 +17,14 @@ use crate::{
     },
 };
 
-pub struct GmailLabelUpdate {
+/// I/O-free coroutine updating a Gmail label (`users.labels.update`).
+pub struct GmailUpdateLabel {
     send: GmailSend<GmailLabel>,
 }
 
-impl GmailLabelUpdate {
+impl GmailUpdateLabel {
+    /// Builds the `users.labels.update` request from the given label,
+    /// whose id selects the label to update.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -43,7 +46,7 @@ impl GmailLabelUpdate {
     }
 }
 
-impl GmailCoroutine for GmailLabelUpdate {
+impl GmailCoroutine for GmailUpdateLabel {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailLabel>, GmailSendError>;
 

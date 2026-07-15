@@ -21,16 +21,20 @@ use crate::{
 /// Response wrapping the delegates of a Gmail account.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct GmailDelegatesListResponse {
+pub struct GmailListDelegatesResponse {
+    /// Delegates of the Gmail account.
     #[serde(default)]
     pub delegates: Vec<GmailDelegate>,
 }
 
-pub struct GmailDelegatesList {
-    send: GmailSend<GmailDelegatesListResponse>,
+/// I/O-free coroutine listing the delegates of a Gmail account
+/// (`users.settings.delegates.list`).
+pub struct GmailListDelegates {
+    send: GmailSend<GmailListDelegatesResponse>,
 }
 
-impl GmailDelegatesList {
+impl GmailListDelegates {
+    /// Builds the `users.settings.delegates.list` request for the given user.
     pub fn new(auth: &HttpAuthBearer, user_id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail delegates listing");
         trace!("user_id: {user_id:?}");
@@ -43,9 +47,9 @@ impl GmailDelegatesList {
     }
 }
 
-impl GmailCoroutine for GmailDelegatesList {
+impl GmailCoroutine for GmailListDelegates {
     type Yield = GmailYield;
-    type Return = Result<GmailSendOutput<GmailDelegatesListResponse>, GmailSendError>;
+    type Return = Result<GmailSendOutput<GmailListDelegatesResponse>, GmailSendError>;
 
     fn resume(&mut self, arg: Option<&[u8]>) -> GmailCoroutineState<Self::Yield, Self::Return> {
         let out = gmail_try!(&mut self.send, arg);

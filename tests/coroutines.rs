@@ -1,14 +1,18 @@
+//! Offline coroutine tests: every coroutine runs against a scripted
+//! in-memory HTTP response, covering request shape, response parsing
+//! and error surfacing.
+
 mod common;
 
 use io_gmail::v1::{
     query::to_query_pairs,
     rest::{
         labels::{
-            GmailLabel, GmailLabelListVisibility, create::GmailLabelCreate,
-            delete::GmailLabelDelete, list::GmailLabelsList, patch::GmailLabelPatch,
+            GmailLabel, GmailLabelListVisibility, create::GmailCreateLabel,
+            delete::GmailDeleteLabel, list::GmailListLabels, patch::GmailPatchLabel,
         },
         messages::{GmailMessageListVisibility, decode_raw, encode_raw},
-        users::get_profile::GmailProfileGet,
+        users::get_profile::GmailGetProfile,
     },
     send::{GmailSendError, parse_api_error},
 };
@@ -26,7 +30,7 @@ fn gets_profile() {
         "HTTP/1.1 200 OK",
         r#"{"emailAddress":"me@example.com","messagesTotal":12,"threadsTotal":8}"#,
     );
-    let mut coroutine = GmailProfileGet::new(&auth(), "me").unwrap();
+    let mut coroutine = GmailGetProfile::new(&auth(), "me").unwrap();
     let (ret, _) = run(&mut coroutine, &response);
     let out = ret.unwrap();
 
@@ -40,7 +44,7 @@ fn lists_labels() {
         "HTTP/1.1 200 OK",
         r#"{"labels":[{"id":"INBOX","name":"INBOX","type":"system"}]}"#,
     );
-    let mut coroutine = GmailLabelsList::new(&auth(), "me").unwrap();
+    let mut coroutine = GmailListLabels::new(&auth(), "me").unwrap();
     let (ret, _) = run(&mut coroutine, &response);
     let out = ret.unwrap();
 
@@ -60,7 +64,7 @@ fn creates_label_with_visibilities() {
         message_list_visibility: Some(GmailMessageListVisibility::Show),
         ..Default::default()
     };
-    let mut coroutine = GmailLabelCreate::new(&auth(), "me", &label).unwrap();
+    let mut coroutine = GmailCreateLabel::new(&auth(), "me", &label).unwrap();
     let (ret, written) = run(&mut coroutine, &response);
 
     assert_eq!(ret.unwrap().response.id, "Label_1");
@@ -82,7 +86,7 @@ fn rejects_empty_label_name() {
         name: "  ".into(),
         ..Default::default()
     };
-    let result = GmailLabelCreate::new(&auth(), "me", &label);
+    let result = GmailCreateLabel::new(&auth(), "me", &label);
     assert!(matches!(result, Err(GmailSendError::InvalidRequest(_))));
 }
 
@@ -97,7 +101,7 @@ fn updates_label_with_patch() {
         name: "renamed".into(),
         ..Default::default()
     };
-    let mut coroutine = GmailLabelPatch::new(&auth(), "me", &label).unwrap();
+    let mut coroutine = GmailPatchLabel::new(&auth(), "me", &label).unwrap();
     let (ret, written) = run(&mut coroutine, &response);
 
     assert_eq!(ret.unwrap().response.name, "renamed");
@@ -112,7 +116,7 @@ fn updates_label_with_patch() {
 #[test]
 fn deletes_label() {
     let response = empty_response("HTTP/1.1 204 No Content");
-    let mut coroutine = GmailLabelDelete::new(&auth(), "me", "Label_1").unwrap();
+    let mut coroutine = GmailDeleteLabel::new(&auth(), "me", "Label_1").unwrap();
     let (ret, written) = run(&mut coroutine, &response);
 
     ret.unwrap();
@@ -130,7 +134,7 @@ fn surfaces_api_errors() {
         "HTTP/1.1 403 Forbidden",
         r#"{"error":{"code":403,"message":"insufficient permissions"}}"#,
     );
-    let mut coroutine = GmailLabelsList::new(&auth(), "me").unwrap();
+    let mut coroutine = GmailListLabels::new(&auth(), "me").unwrap();
     let (ret, _) = run(&mut coroutine, &response);
 
     match ret.unwrap_err() {
@@ -199,8 +203,9 @@ fn serializes_params_into_query_pairs() {
 
     let pairs = to_query_pairs(&params);
 
-    // None and the false flag vanish; the slice expands into one
-    // repeated key per element; field names come from the serde rename.
+    // NOTE: None and the false flag vanish; the slice expands into
+    // one repeated key per element; field names come from the serde
+    // rename.
     assert_eq!(
         pairs,
         vec![

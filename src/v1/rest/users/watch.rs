@@ -17,11 +17,13 @@ use crate::{
     },
 };
 
+/// I/O-free coroutine setting up Gmail push notifications (`users.watch`).
 pub struct GmailWatch {
     send: GmailSend<GmailWatchResponse>,
 }
 
 impl GmailWatch {
+    /// Builds the `users.watch` request from the given [`GmailWatchRequest`].
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,

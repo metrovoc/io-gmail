@@ -17,11 +17,13 @@ use crate::{
     },
 };
 
-pub struct GmailLabelCreate {
+/// I/O-free coroutine creating a Gmail label (`users.labels.create`).
+pub struct GmailCreateLabel {
     send: GmailSend<GmailLabel>,
 }
 
-impl GmailLabelCreate {
+impl GmailCreateLabel {
+    /// Builds the `users.labels.create` request from the given label.
     pub fn new(
         auth: &HttpAuthBearer,
         user_id: &str,
@@ -42,7 +44,7 @@ impl GmailLabelCreate {
     }
 }
 
-impl GmailCoroutine for GmailLabelCreate {
+impl GmailCoroutine for GmailCreateLabel {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailLabel>, GmailSendError>;
 

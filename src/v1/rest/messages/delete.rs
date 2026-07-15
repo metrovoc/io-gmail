@@ -15,11 +15,13 @@ use crate::{
 };
 
 /// Gmail REST message permanent deletion, yielding no response body.
-pub struct GmailMessageDelete {
+pub struct GmailDeleteMessage {
     send: GmailSend<GmailNoResponse>,
 }
 
-impl GmailMessageDelete {
+impl GmailDeleteMessage {
+    /// Builds the `users.messages.delete` request for the given
+    /// message id.
     pub fn new(auth: &HttpAuthBearer, user_id: &str, id: &str) -> Result<Self, GmailSendError> {
         debug!("prepare gmail message deletion");
         trace!("id: {id:?}");
@@ -31,7 +33,7 @@ impl GmailMessageDelete {
     }
 }
 
-impl GmailCoroutine for GmailMessageDelete {
+impl GmailCoroutine for GmailDeleteMessage {
     type Yield = GmailYield;
     type Return = Result<GmailSendOutput<GmailNoResponse>, GmailSendError>;
 

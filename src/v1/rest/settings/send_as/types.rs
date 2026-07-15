@@ -12,22 +12,31 @@ use crate::v1::rest::settings::GmailVerificationStatus;
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GmailSendAs {
+    /// Email address that appears in the From header of sent mail.
     #[serde(default)]
     pub send_as_email: String,
+    /// Display name used in the From header of sent mail.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    /// Email address put in the Reply-To header of sent mail.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reply_to_address: Option<String>,
+    /// HTML signature appended to messages composed with this alias.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
+    /// Whether this alias is the primary address of the account.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub is_primary: Option<bool>,
+    /// Whether this alias is the default From address.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub is_default: Option<bool>,
+    /// Whether Gmail treats this address as an alias of the primary address.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub treat_as_alias: Option<bool>,
+    /// Optional SMTP service used as outbound relay for this alias.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub smtp_msa: Option<GmailSmtpMsa>,
+    /// Verification status of the alias.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verification_status: Option<GmailVerificationStatus>,
 }
@@ -36,14 +45,19 @@ pub struct GmailSendAs {
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GmailSmtpMsa {
+    /// Hostname of the SMTP service.
     #[serde(default)]
     pub host: String,
+    /// Port of the SMTP service.
     #[serde(default)]
     pub port: u32,
+    /// Username used for authentication against the SMTP service.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    /// Password used for authentication against the SMTP service.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+    /// Transport security used to connect to the SMTP service.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub security_mode: Option<GmailSecurityMode>,
 }
@@ -52,8 +66,12 @@ pub struct GmailSmtpMsa {
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum GmailSecurityMode {
+    /// Unspecified security mode.
     SecurityModeUnspecified,
+    /// Unsecured communication with the SMTP service.
     None,
+    /// Communication secured using SSL from connection start.
     Ssl,
+    /// Communication upgraded to a secure channel using STARTTLS.
     Starttls,
 }
