@@ -1,5 +1,5 @@
 {
-  description = "Gmail REST API client library for Rust";
+  description = "Google Gmail REST API client library for Rust";
 
   inputs = {
     nixpkgs = {
