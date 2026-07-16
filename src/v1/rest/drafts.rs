@@ -1,4 +1,4 @@
-//! Gmail draft resource types.
+//! Gmail drafts (`users.drafts`): list, get, create, update, send, delete.
 //!
 //! <https://developers.google.com/gmail/api/reference/rest/v1/users.drafts>
 
@@ -7,6 +7,13 @@ use alloc::string::String;
 use serde::{Deserialize, Serialize};
 
 use crate::v1::rest::messages::GmailMessage;
+
+pub mod create;
+pub mod delete;
+pub mod get;
+pub mod list;
+pub mod send;
+pub mod update;
 
 /// Gmail REST draft resource (an id plus its draft message).
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]

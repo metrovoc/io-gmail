@@ -2,20 +2,30 @@
 //!
 //! <https://developers.google.com/gmail/api/reference/rest/v1/users.labels/list>
 
-use alloc::format;
+use alloc::{format, vec::Vec};
 
 use io_http::rfc6750::bearer::HttpAuthBearer;
 use log::{debug, trace};
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
     coroutine::*,
     gmail_try,
     v1::{
-        rest::labels::GmailLabelsListResponse,
+        rest::labels::GmailLabel,
         send::{GMAIL_API_BASE, GmailSend, GmailSendError, GmailSendOutput},
     },
 };
+
+/// Response body of `users.labels.list`.
+#[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct GmailLabelsListResponse {
+    /// The list of labels.
+    #[serde(default)]
+    pub labels: Vec<GmailLabel>,
+}
 
 /// I/O-free coroutine listing the Gmail labels (`users.labels.list`).
 pub struct GmailLabelsList {

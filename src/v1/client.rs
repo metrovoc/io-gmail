@@ -41,8 +41,12 @@ use crate::v1::send::GMAIL_API_BASE;
 use crate::{
     coroutine::*,
     v1::rest::labels::{
-        GmailLabel, GmailLabelsListResponse, create::GmailLabelCreate, delete::GmailLabelDelete,
-        get::GmailLabelGet, list::GmailLabelsList, patch::GmailLabelPatch,
+        GmailLabel,
+        create::GmailLabelCreate,
+        delete::GmailLabelDelete,
+        get::GmailLabelGet,
+        list::{GmailLabelsList, GmailLabelsListResponse},
+        patch::GmailLabelPatch,
         update::GmailLabelUpdate,
     },
     v1::rest::messages::{
@@ -52,8 +56,9 @@ use crate::{
         trash::GmailMessageTrash, untrash::GmailMessageUntrash,
     },
     v1::rest::users::{
-        GmailProfile, GmailWatchRequest, GmailWatchResponse, get_profile::GmailProfileGet,
-        stop::GmailStop, watch::GmailWatch,
+        get_profile::{GmailProfile, GmailProfileGet},
+        stop::GmailStop,
+        watch::{GmailWatch, GmailWatchRequest, GmailWatchResponse},
     },
     v1::send::{GmailNoResponse, GmailSendError, GmailSendOutput},
 };

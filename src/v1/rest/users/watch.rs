@@ -2,20 +2,55 @@
 //!
 //! <https://developers.google.com/gmail/api/reference/rest/v1/users/watch>
 
-use alloc::format;
+use alloc::{format, string::String, vec::Vec};
 
 use io_http::rfc6750::bearer::HttpAuthBearer;
 use log::{debug, trace};
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
     coroutine::*,
     gmail_try,
-    v1::{
-        rest::users::{GmailWatchRequest, GmailWatchResponse},
-        send::{GMAIL_API_BASE, GmailSend, GmailSendError, GmailSendOutput},
-    },
+    v1::send::{GMAIL_API_BASE, GmailSend, GmailSendError, GmailSendOutput},
 };
+
+/// Push-notification watch request body (`users.watch`).
+#[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct GmailWatchRequest {
+    /// The fully qualified Cloud Pub/Sub topic to publish
+    /// notifications to.
+    pub topic_name: String,
+    /// The label ids to restrict notifications about.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub label_ids: Vec<String>,
+    /// The filtering behavior applied to the label ids.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label_filter_behavior: Option<GmailLabelFilterBehavior>,
+}
+
+/// Whether a watch includes or excludes its label IDs.
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum GmailLabelFilterBehavior {
+    /// Only changes on the listed labels trigger a notification.
+    Include,
+    /// Changes on the listed labels never trigger a notification.
+    Exclude,
+}
+
+/// Result of establishing a watch (`users.watch`).
+#[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct GmailWatchResponse {
+    /// The id of the current history record of the mailbox.
+    #[serde(default)]
+    pub history_id: Option<String>,
+    /// The expiration time of the watch as epoch milliseconds.
+    #[serde(default)]
+    pub expiration: Option<String>,
+}
 
 /// I/O-free coroutine setting up Gmail push notifications (`users.watch`).
 pub struct GmailWatch {

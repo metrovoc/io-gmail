@@ -1,4 +1,5 @@
-//! Gmail forwarding-address resource types.
+//! Gmail forwarding addresses (`users.settings.forwardingAddresses`):
+//! list, get, create, delete.
 //!
 //! <https://developers.google.com/gmail/api/reference/rest/v1/users.settings.forwardingAddresses>
 
@@ -7,6 +8,11 @@ use alloc::string::String;
 use serde::{Deserialize, Serialize};
 
 use crate::v1::rest::settings::GmailVerificationStatus;
+
+pub mod create;
+pub mod delete;
+pub mod get;
+pub mod list;
 
 /// Forwarding address registered on a Gmail account.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]

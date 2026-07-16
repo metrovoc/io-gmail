@@ -1,12 +1,21 @@
-//! Gmail send-as alias (users.settings.sendAs).
+//! Gmail send-as aliases (`users.settings.sendAs`): list, get, create,
+//! update, patch, delete, verify.
 //!
-//! An address the account may use in the From header of sent mail.
+//! <https://developers.google.com/gmail/api/reference/rest/v1/users.settings.sendAs>
 
 use alloc::string::String;
 
 use serde::{Deserialize, Serialize};
 
-use crate::v1::rest::settings::{GmailVerificationStatus, send_as::GmailSmtpMsa};
+use crate::v1::rest::settings::GmailVerificationStatus;
+
+pub mod create;
+pub mod delete;
+pub mod get;
+pub mod list;
+pub mod patch;
+pub mod update;
+pub mod verify;
 
 /// Send-as alias of a Gmail account.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
@@ -39,4 +48,39 @@ pub struct GmailSendAs {
     /// Verification status of the alias.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verification_status: Option<GmailVerificationStatus>,
+}
+
+/// SMTP relay configuration used to send mail for a send-as alias.
+#[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct GmailSmtpMsa {
+    /// Hostname of the SMTP service.
+    #[serde(default)]
+    pub host: String,
+    /// Port of the SMTP service.
+    #[serde(default)]
+    pub port: u32,
+    /// Username used for authentication against the SMTP service.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+    /// Password used for authentication against the SMTP service.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    /// Transport security used to connect to the SMTP service.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub security_mode: Option<GmailSecurityMode>,
+}
+
+/// Transport security mode of an SMTP relay service.
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum GmailSecurityMode {
+    /// Unspecified security mode.
+    SecurityModeUnspecified,
+    /// Unsecured communication with the SMTP service.
+    None,
+    /// Communication secured using SSL from connection start.
+    Ssl,
+    /// Communication upgraded to a secure channel using STARTTLS.
+    Starttls,
 }

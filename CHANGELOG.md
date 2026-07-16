@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-16
+
+### Changed
+
+- Reorganised the REST resource types so each lives in its resource module directly, dropping the internal `types` submodules and per-type files together with their flattened re-exports.
+
+  Entity and value-object types keep their existing path (`rest::labels::GmailLabel`, `rest::messages::GmailMessage`, `rest::settings::GmailImapSettings` and so on). Operation-specific companions moved into their operation module: `rest::labels::GmailLabelsListResponse` is now `rest::labels::list::GmailLabelsListResponse`, `rest::users::GmailProfile` is now `rest::users::get_profile::GmailProfile`, and `rest::users::GmailWatchRequest`, `GmailWatchResponse` and `GmailLabelFilterBehavior` now live under `rest::users::watch`.
+
 ## [0.1.0] - 2026-07-15
 
 ### Added
@@ -16,5 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `v1::history_poll::GmailHistoryPoll`, an infinite poll-based mailbox watch composing `users.getProfile` and `users.history.list`, emitting one Gmail-native diff per tick and re-baselining on an expired history cursor.
 - Added `GmailClientStd` (`client` feature): a std blocking client with one convenience method per first-class verb, a generic `run` loop for the other coroutines, and a `connect` constructor opening gmail.googleapis.com through pimalaya-stream (`rustls-ring` default, `rustls-aws`, `native-tls`).
 
-[unreleased]: https://github.com/pimalaya/io-gmail/compare/v0.1.0..HEAD
+[unreleased]: https://github.com/pimalaya/io-gmail/compare/v0.2.0..HEAD
+[0.2.0]: https://github.com/pimalaya/io-gmail/compare/v0.1.0..v0.2.0
 [0.1.0]: https://github.com/pimalaya/io-gmail/compare/root..v0.1.0

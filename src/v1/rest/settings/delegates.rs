@@ -1,4 +1,5 @@
-//! Gmail delegate resource types.
+//! Gmail delegates (`users.settings.delegates`): list, get, create,
+//! delete.
 //!
 //! <https://developers.google.com/gmail/api/reference/rest/v1/users.settings.delegates>
 
@@ -7,6 +8,11 @@ use alloc::string::String;
 use serde::{Deserialize, Serialize};
 
 use crate::v1::rest::settings::GmailVerificationStatus;
+
+pub mod create;
+pub mod delete;
+pub mod get;
+pub mod list;
 
 /// Delegate granted access to a Gmail account.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]

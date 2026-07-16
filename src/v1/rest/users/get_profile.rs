@@ -2,20 +2,35 @@
 //!
 //! <https://developers.google.com/gmail/api/reference/rest/v1/users/getProfile>
 
-use alloc::format;
+use alloc::{format, string::String};
 
 use io_http::rfc6750::bearer::HttpAuthBearer;
 use log::{debug, trace};
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
     coroutine::*,
     gmail_try,
-    v1::{
-        rest::users::GmailProfile,
-        send::{GMAIL_API_BASE, GmailSend, GmailSendError, GmailSendOutput},
-    },
+    v1::send::{GMAIL_API_BASE, GmailSend, GmailSendError, GmailSendOutput},
 };
+
+/// Aggregated mailbox profile of a Gmail user.
+#[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct GmailProfile {
+    /// The email address of the user.
+    pub email_address: String,
+    /// The total number of messages in the mailbox.
+    #[serde(default)]
+    pub messages_total: Option<u64>,
+    /// The total number of threads in the mailbox.
+    #[serde(default)]
+    pub threads_total: Option<u64>,
+    /// The id of the current history record of the mailbox.
+    #[serde(default)]
+    pub history_id: Option<String>,
+}
 
 /// I/O-free coroutine getting the Gmail user profile (`users.getProfile`).
 pub struct GmailProfileGet {
