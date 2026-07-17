@@ -225,8 +225,15 @@ impl<T: DeserializeOwned> GmailCoroutine for GmailSend<T> {
                     ..
                 })) => {
                     if response.status.is_success() {
+                        // NOTE: an empty 2xx body — a DELETE, or a list
+                        // endpoint with an empty collection (e.g.
+                        // `settings.filters.list`) — is normalised to `{}`.
+                        // `GmailNoResponse` ignores it and struct responses
+                        // fall back to their `#[serde(default)]` fields;
+                        // `null` would fail every struct response with
+                        // "invalid type: null".
                         let body = if response.body.is_empty() {
-                            b"null".as_slice()
+                            b"{}".as_slice()
                         } else {
                             response.body.as_slice()
                         };

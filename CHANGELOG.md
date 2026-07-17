@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed struct responses failing to parse when Gmail returns an empty 2xx body.
+
+  A DELETE, or a list endpoint whose collection is empty (e.g. `settings.filters.list`, `settings.forwardingAddresses.list`), returns no body; `GmailSend` normalised that to `null`, which failed every struct response with `invalid type: null`. It is now normalised to `{}`, so `GmailNoResponse` still ignores it and list responses fall back to their `#[serde(default)]` fields.
+
 ## [0.2.0] - 2026-07-16
 
 ### Changed
