@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-07-25
+
+### Added
+
+- Added an optional `schemars` feature deriving `schemars::JsonSchema` on the serializable REST output types, so downstream tools can generate JSON Schemas describing Gmail command output.
+
+  The feature is off by default and stays `no_std`: it pulls only schemars' `derive` (not `std`). It covers the getProfile, label, message (payload, parts, headers), draft, thread and history response types, plus the settings filters, forwardingAddresses, delegates and sendAs types together with their list responses.
+
 ## [0.2.1] - 2026-07-25
 
 ### Fixed
@@ -32,7 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `v1::history_poll::GmailHistoryPoll`, an infinite poll-based mailbox watch composing `users.getProfile` and `users.history.list`, emitting one Gmail-native diff per tick and re-baselining on an expired history cursor.
 - Added `GmailClientStd` (`client` feature): a std blocking client with one convenience method per first-class verb, a generic `run` loop for the other coroutines, and a `connect` constructor opening gmail.googleapis.com through pimalaya-stream (`rustls-ring` default, `rustls-aws`, `native-tls`).
 
-[unreleased]: https://github.com/pimalaya/io-gmail/compare/v0.2.1..HEAD
+[unreleased]: https://github.com/pimalaya/io-gmail/compare/v0.2.2..HEAD
+[0.2.2]: https://github.com/pimalaya/io-gmail/compare/v0.2.1..v0.2.2
 [0.2.1]: https://github.com/pimalaya/io-gmail/compare/v0.2.0..v0.2.1
 [0.2.0]: https://github.com/pimalaya/io-gmail/compare/v0.1.0..v0.2.0
 [0.1.0]: https://github.com/pimalaya/io-gmail/compare/root..v0.1.0
