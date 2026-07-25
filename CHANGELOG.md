@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-25
+
 ### Fixed
 
 - Fixed struct responses failing to parse when Gmail returns an empty 2xx body.
@@ -30,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `v1::history_poll::GmailHistoryPoll`, an infinite poll-based mailbox watch composing `users.getProfile` and `users.history.list`, emitting one Gmail-native diff per tick and re-baselining on an expired history cursor.
 - Added `GmailClientStd` (`client` feature): a std blocking client with one convenience method per first-class verb, a generic `run` loop for the other coroutines, and a `connect` constructor opening gmail.googleapis.com through pimalaya-stream (`rustls-ring` default, `rustls-aws`, `native-tls`).
 
-[unreleased]: https://github.com/pimalaya/io-gmail/compare/v0.2.0..HEAD
+[unreleased]: https://github.com/pimalaya/io-gmail/compare/v0.2.1..HEAD
+[0.2.1]: https://github.com/pimalaya/io-gmail/compare/v0.2.0..v0.2.1
 [0.2.0]: https://github.com/pimalaya/io-gmail/compare/v0.1.0..v0.2.0
 [0.1.0]: https://github.com/pimalaya/io-gmail/compare/root..v0.1.0
