@@ -40,6 +40,7 @@ pub struct GmailThread {
 /// A summary carries the thread metadata without its messages; fetch
 /// the full [`GmailThread`] with `users.threads.get`.
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailThreadSummary {
     /// Immutable identifier of the thread.

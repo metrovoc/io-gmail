@@ -13,6 +13,7 @@ pub mod list;
 
 /// Mail filter of a Gmail account.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailFilter {
     /// Server-assigned identifier of the filter.
@@ -28,6 +29,7 @@ pub struct GmailFilter {
 
 /// Action applied by a Gmail filter to a matching message.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailFilterAction {
     /// Identifiers of labels to add to the message.
@@ -43,6 +45,7 @@ pub struct GmailFilterAction {
 
 /// Conditions matched by a Gmail filter against incoming messages.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailFilterCriteria {
     /// Sender display name or email address to match.
@@ -76,6 +79,7 @@ pub struct GmailFilterCriteria {
 
 /// Comparison applied to the message size in a filter criterion.
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub enum GmailFilterSizeComparison {
     /// No size comparison specified.

@@ -22,6 +22,7 @@ client = []
 rustls-ring = ["client", "pimalaya-stream/rustls-ring", "dep:anyhow", "dep:pimalaya-stream"]
 rustls-aws = ["client", "pimalaya-stream/rustls-aws", "dep:anyhow", "dep:pimalaya-stream"]
 native-tls = ["client", "pimalaya-stream/native-tls", "dep:anyhow", "dep:pimalaya-stream"]
+schemars = ["dep:schemars"]
 vendored = ["pimalaya-stream?/vendored"]
 
 [dev-dependencies]
@@ -33,10 +34,11 @@ tokio-rustls = "0.26"
 
 [dependencies]
 anyhow = { version = "1", optional = true }
-base64 = { version = "0.22", default-features = false, features = ["alloc"] }
+base64 = { version = "0.23", default-features = false, features = ["alloc"] }
 io-http = { version = "0.3", default-features = false }
 log = { version = "0.4", default-features = false }
 pimalaya-stream = { version = "0.1", default-features = false, optional = true }
+schemars = { version = "1", optional = true, default-features = false, features = ["derive"] }
 serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
 serde_variant = { version = "0.1", default-features = false }

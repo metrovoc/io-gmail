@@ -21,6 +21,7 @@ pub mod update;
 /// Labels are used to categorize messages and threads within the
 /// user's mailbox.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailLabel {
     /// The immutable id of the label.
@@ -57,6 +58,7 @@ pub struct GmailLabel {
 
 /// Text and background colors of a user label, given as hex strings.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailLabelColor {
     /// The text color of the label as a hex string.
@@ -69,6 +71,7 @@ pub struct GmailLabelColor {
 
 /// Visibility of the label in the label list of the Gmail web client.
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub enum GmailLabelListVisibility {
     /// The label always shows in the label list.
@@ -81,6 +84,7 @@ pub enum GmailLabelListVisibility {
 
 /// Owner of the label: created by Gmail or by the user.
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub enum GmailLabelType {
     /// A label created by Gmail, like INBOX or TRASH.

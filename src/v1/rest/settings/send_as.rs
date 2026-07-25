@@ -19,6 +19,7 @@ pub mod verify;
 
 /// Send-as alias of a Gmail account.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailSendAs {
     /// Email address that appears in the From header of sent mail.
@@ -52,6 +53,7 @@ pub struct GmailSendAs {
 
 /// SMTP relay configuration used to send mail for a send-as alias.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailSmtpMsa {
     /// Hostname of the SMTP service.
@@ -73,6 +75,7 @@ pub struct GmailSmtpMsa {
 
 /// Transport security mode of an SMTP relay service.
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub enum GmailSecurityMode {
     /// Unspecified security mode.

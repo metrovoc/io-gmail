@@ -16,6 +16,7 @@ pub mod list;
 
 /// Forwarding address registered on a Gmail account.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailForwardingAddress {
     /// Email address messages can be forwarded to.

@@ -158,6 +158,7 @@ pub enum GmailPopAccessWindow {
 
 /// Verification state of an email address owned by a Gmail account.
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub enum GmailVerificationStatus {
     /// No verification status specified.

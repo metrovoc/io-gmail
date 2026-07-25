@@ -26,6 +26,7 @@ pub mod untrash;
 /// Populated fields depend on the requested [`GmailMessageFormat`]:
 /// `payload` comes with the full format, `raw` with the raw format.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailMessage {
     /// The immutable id of the message.
@@ -77,6 +78,7 @@ pub fn encode_raw(raw: &[u8]) -> String {
 
 /// A lightweight Gmail message resource carrying only its ids.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailMessageId {
     /// The immutable id of the message.
@@ -91,6 +93,7 @@ pub struct GmailMessageId {
 /// The top-level part is exposed as the payload of a [`GmailMessage`];
 /// multipart containers nest their children in `parts`.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailMessagePayload {
     /// The immutable id of the message part.
@@ -128,6 +131,7 @@ impl GmailMessagePayload {
 
 /// The body of a single MIME part of a Gmail message.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailMessagePartBody {
     /// The id of an external attachment, retrievable via a separate
@@ -145,6 +149,7 @@ pub struct GmailMessagePartBody {
 
 /// A single header of a Gmail message part.
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct GmailMessageHeader {
     /// The name of the header.
     pub name: String,
@@ -171,6 +176,7 @@ pub enum GmailMessageFormat {
 
 /// Whether messages carrying a label show up in the message list.
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub enum GmailMessageListVisibility {
     /// Messages with the label show in the message list.

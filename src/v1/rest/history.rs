@@ -16,6 +16,7 @@ pub mod list;
 /// A record captures a change to the mailbox and may affect multiple
 /// messages in multiple ways.
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailHistory {
     /// The mailbox sequence id of the history record.
@@ -40,6 +41,7 @@ pub struct GmailHistory {
 
 /// A message involved in a history addition or deletion change.
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailHistoryMessage {
     /// The affected message.
@@ -48,6 +50,7 @@ pub struct GmailHistoryMessage {
 
 /// A label change on a message in a history record.
 #[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct GmailHistoryLabel {
     /// The affected message.
